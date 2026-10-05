@@ -1,0 +1,24 @@
+name: Wake on LAN
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [wake]
+
+jobs:
+  wake_pc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Magic Packet to PC
+        run: |
+          python -c "
+          import socket
+          mac = 'A8:A1:59:DB:A0:3E'
+          data = bytes.fromhex('FF' * 6 + mac.replace(':', '').replace('-', '') * 16)
+          target_ip = '${{ secrets.ROUTER_DDNS_OR_IP }}'
+          port = 9
+          sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+          sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+          sock.sendto(data, (target_ip, port))
+          print('Da gui tin hieu Magic Packet toi', target_ip)
+          "
