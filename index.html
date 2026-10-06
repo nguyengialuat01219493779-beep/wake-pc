@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Remote PC"/>
+  <meta name="theme-color" content="#17182b"/>
+  <title>Remote PC Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #17182b;
+      --card-bg: linear-gradient(145deg, #1e1f36, #141525);
+      --primary: #9d7bff;
+      --primary-gradient: linear-gradient(135deg, #ff8c70, #ffb56b);
+      --primary-purple: linear-gradient(135deg, #a855f7, #6366f1);
+      --text: #ffffff;
+      --muted: #8e8ea6;
+      --shadow-light: rgba(255, 255, 255, 0.04);
+      --shadow-dark: rgba(0, 0, 0, 0.6);
+      --glow: rgba(168, 85, 247, 0.35);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; min-height: 100vh;
+      background: radial-gradient(circle at 15% 15%, #232545 0%, #111220 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 28px;
+      box-shadow: -6px -6px 18px var(--shadow-light), 10px 10px 28px var(--shadow-dark);
+    }
+    .btn-gradient {
+      background: var(--primary-gradient);
+      box-shadow: 0 10px 25px rgba(255, 140, 112, 0.4);
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .btn-gradient:active {
+      transform: scale(0.96);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .btn-wake {
+      background: var(--primary-purple);
+      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.45);
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .btn-wake:active {
+      transform: scale(0.96);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .pulse-green {
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+    @keyframes pulseGreen {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4)); }
+      50% { filter: drop-shadow(0 0 22px rgba(34, 197, 94, 0.8)); }
+    }
+    .pulse-red {
+      animation: pulseRed 2.5s infinite ease-in-out;
+    }
+    @keyframes pulseRed {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.3)); }
+      50% { filter: drop-shadow(0 0 22px rgba(239, 68, 68, 0.7)); }
+    }
+  </style>
+</head>
+<body class="w-full max-w-sm mx-auto">
+
+  <!-- Header -->
+  <div class="text-center mb-6">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-2" style="background:rgba(157,123,255,0.15);color:var(--primary);border:1px solid rgba(157,123,255,0.3)">
+      <span>⚡</span> LINK VĨNH VIỄN
+    </div>
+    <h1 class="text-2xl font-bold">Remote PC Hub</h1>
+    <p class="text-xs text-[var(--muted)] mt-1">Cổng điều khiển máy tính từ xa trọn đời</p>
+  </div>
+
+  <!-- Status Card -->
+  <div class="card w-full p-6 flex flex-col items-center text-center relative overflow-hidden mb-5">
+    
+    <!-- Status Ring / Icon -->
+    <div class="relative w-36 h-36 flex items-center justify-center mb-4">
+      <div id="statusGlowRing" class="w-32 h-32 rounded-full border-4 border-[#252849] flex items-center justify-center transition-all duration-500">
+        <div id="statusDot" class="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#353859]">
+          ⏳
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Text -->
+    <h2 id="statusTitle" class="text-lg font-bold">Đang kiểm tra kết nối...</h2>
+    <p id="statusDesc" class="text-xs text-[var(--muted)] mt-1 mb-4">Đang dò tìm server máy tính...</p>
+
+    <!-- Info Stats (When online) -->
+    <div id="statsRow" class="hidden w-full grid grid-cols-3 gap-2 py-3 px-2 rounded-2xl mb-4 text-center border border-white/5" style="background:#131422">
+      <div>
+        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">Uptime</p>
+        <p id="statUptime" class="text-xs font-bold mt-0.5 text-white">—</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">CPU</p>
+        <p id="statCPU" class="text-xs font-bold mt-0.5 text-white">—</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">RAM</p>
+        <p id="statRAM" class="text-xs font-bold mt-0.5 text-white">—</p>
+      </div>
+    </div>
+
+    <!-- MAIN ACTION BUTTON -->
+    <div id="btnContainer" class="w-full">
+      <!-- Button Online (Redirect to PC) -->
+      <button id="btnConnect" onclick="openRemotePC()" class="hidden w-full py-3.5 rounded-2xl text-sm font-bold text-white btn-gradient flex items-center justify-center gap-2">
+        <span>MỞ REMOTE PC NGAY</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+
+      <!-- Button Offline (Wake on LAN) -->
+      <button id="btnWake" onclick="triggerWake()" class="hidden w-full py-3.5 rounded-2xl text-sm font-bold text-white btn-wake flex items-center justify-center gap-2">
+        <span>⚡ BẬT MÁY TỪ XA</span>
+      </button>
+
+      <!-- Loading Placeholder -->
+      <div id="loadingBtn" class="w-full py-3.5 rounded-2xl text-xs font-semibold text-[var(--muted)] border border-white/10 flex items-center justify-center gap-2" style="background:#151627">
+        <svg class="animate-spin h-4 w-4 text-[var(--primary)]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Đang dò tìm server...
+      </div>
+    </div>
+
+    <!-- Auto redirect indicator -->
+    <div id="autoRedirectBox" class="hidden mt-3 text-xs text-[var(--muted)] flex items-center justify-center gap-1.5">
+      <input type="checkbox" id="autoRedirectCheck" checked class="accent-[var(--primary)] rounded cursor-pointer">
+      <label for="autoRedirectCheck" class="cursor-pointer">Tự động chuyển tiếp sau <span id="countdownSec" class="font-bold text-white">2</span>s</label>
+    </div>
+
+  </div>
+
+  <!-- Manual Refresh / Direct Link Card -->
+  <div class="card w-full p-4 mb-4 text-xs text-[var(--muted)]">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-semibold text-white">📡 Trạng thái đường truyền</span>
+      <button onclick="checkConnection()" class="px-2.5 py-1 rounded-lg border border-white/10 text-white font-medium active:opacity-60" style="background:#1a1c30">
+        ↻ Kiểm tra lại
+      </button>
+    </div>
+    <p id="activeUrlText" class="truncate font-mono text-[11px] text-[var(--primary)] py-1.5 px-2.5 rounded-xl border border-white/5 mb-1" style="background:#111220">
+      Đang tải link...
+    </p>
+    <p id="updatedTimeText" class="text-[10px] text-right opacity-70">—</p>
+  </div>
+
+  <!-- iPhone Add to Home Screen tip -->
+  <div class="text-center px-4 py-3 text-xs text-[var(--muted)] border border-white/5 rounded-2xl w-full" style="background:rgba(255,255,255,0.02)">
+    💡 <b>Mẹo trên iPhone:</b> Bấm biểu tượng <b>Chia sẻ (Share ⎋)</b> ➔ Chọn <b>"Thêm vào MH chính"</b> để lưu App cố định vĩnh viễn!
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-4 left-4 right-4 max-w-sm mx-auto p-3.5 rounded-2xl text-xs font-semibold text-white shadow-2xl transition-all duration-300 transform -translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-2 border border-purple-500/30" style="background:linear-gradient(135deg,#1f2038,#131424)">
+    <span id="toastIcon">🔔</span>
+    <span id="toastMsg" class="flex-1">Thông báo</span>
+  </div>
+
+  <script>
+    const GITHUB_REPO = 'nguyengialuat01219493779-beep/wake-pc';
+    
+    // Lưu token từ URL Hash nếu có vào localStorage
+    if (window.location.hash.includes('token=')) {
+      const match = window.location.hash.match(/token=([^&]+)/);
+      if (match && match[1]) {
+        localStorage.setItem('gh_token', decodeURIComponent(match[1]));
+        history.replaceState(null, null, window.location.pathname);
+      }
+    }
+
+    let targetUrl = '';
+    let isPCAlive = false;
+    let autoRedirectTimer = null;
+
+    function getGitHubToken() {
+      return localStorage.getItem('gh_token') || '';
+    }
+
+    function showToast(msg, icon = '🔔', duration = 4000) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerHTML = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        toast.style.transform = 'translateY(-100px)';
+        toast.style.opacity = '0';
+      }, duration);
+    }
+
+    async function checkConnection() {
+      const dot = document.getElementById('statusDot');
+      const ring = document.getElementById('statusGlowRing');
+      const title = document.getElementById('statusTitle');
+      const desc = document.getElementById('statusDesc');
+      const btnConnect = document.getElementById('btnConnect');
+      const btnWake = document.getElementById('btnWake');
+      const loadingBtn = document.getElementById('loadingBtn');
+      const statsRow = document.getElementById('statsRow');
+      const autoBox = document.getElementById('autoRedirectBox');
+
+      dot.textContent = '⏳';
+      dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#353859]';
+      ring.className = 'w-32 h-32 rounded-full border-4 border-[#252849] flex items-center justify-center transition-all duration-500';
+      title.textContent = 'Đang kiểm tra kết nối...';
+      desc.textContent = 'Đang dò tìm server máy tính...';
+      loadingBtn.classList.remove('hidden');
+      btnConnect.classList.add('hidden');
+      btnWake.classList.add('hidden');
+      statsRow.classList.add('hidden');
+      autoBox.classList.add('hidden');
+
+      if (autoRedirectTimer) {
+        clearInterval(autoRedirectTimer);
+        autoRedirectTimer = null;
+      }
+
+      try {
+        // 1. Lấy thông tin link mới nhất từ active_link.json trên GitHub (cache buster)
+        const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
+        if (!res.ok) throw new Error('Chưa có active_link.json');
+        const data = await res.json();
+        
+        targetUrl = data.url;
+        document.getElementById('activeUrlText').textContent = data.url || 'Chưa có link';
+        document.getElementById('updatedTimeText').textContent = 'Cập nhật lúc: ' + (data.updated_at || 'Mới đây');
+
+        // 2. Kiểm tra xem máy tính có đang Online không
+        let online = false;
+        let pcData = null;
+
+        // Ưu tiên thử Wi-Fi nhà trước nếu đang ở nhà
+        if (data.local_ip) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1200);
+            const rLocal = await fetch(`http://${data.local_ip}:8000/api/status`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (rLocal.ok) {
+              online = true;
+              targetUrl = `http://${data.local_ip}:8000`;
+              pcData = await rLocal.json();
+            }
+          } catch(e) {}
+        }
+
+        // Nếu chưa online nội bộ, kiểm tra qua link Cloudflare
+        if (!online && targetUrl) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            const rCF = await fetch(`${targetUrl}/api/status`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (rCF.ok) {
+              online = true;
+              pcData = await rCF.json();
+            }
+          } catch(e) {}
+        }
+
+        loadingBtn.classList.add('hidden');
+
+        if (online && pcData) {
+          isPCAlive = true;
+          dot.textContent = '🟢';
+          dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#16a34a] pulse-green';
+          ring.className = 'w-32 h-32 rounded-full border-4 border-emerald-500 flex items-center justify-center transition-all duration-500 pulse-green';
+          title.textContent = 'Máy tính đang BẬT';
+          desc.textContent = targetUrl.includes('192.168.') ? 'Đang kết nối qua Wi-Fi nhà siêu nhanh (0.02s)' : 'Đang kết nối trực tiếp qua Internet (4G)';
+
+          document.getElementById('statUptime').textContent = pcData.uptime || 'Online';
+          document.getElementById('statCPU').textContent = `${pcData.cpu}%`;
+          document.getElementById('statRAM').textContent = `${pcData.ram}%`;
+          statsRow.classList.remove('hidden');
+
+          btnConnect.classList.remove('hidden');
+          autoBox.classList.remove('hidden');
+
+          startAutoRedirect();
+        } else {
+          isPCAlive = false;
+          dot.textContent = '🔴';
+          dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#dc2626] pulse-red';
+          ring.className = 'w-32 h-32 rounded-full border-4 border-red-500 flex items-center justify-center transition-all duration-500 pulse-red';
+          title.textContent = 'Máy tính đang TẮT';
+          desc.textContent = 'Nhấn nút bên dưới để phát tín hiệu bật nguồn máy tính từ xa!';
+          btnWake.classList.remove('hidden');
+        }
+
+      } catch(e) {
+        loadingBtn.classList.add('hidden');
+        dot.textContent = '🔴';
+        dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg bg-[#dc2626]';
+        title.textContent = 'Máy tính đang TẮT';
+        desc.textContent = 'Không tìm thấy kết nối tới máy tính. Bạn có thể bật máy từ xa.';
+        btnWake.classList.remove('hidden');
+      }
+    }
+
+    function openRemotePC() {
+      if (targetUrl) {
+        window.location.href = targetUrl;
+      } else {
+        showToast('Chưa có link máy tính!', '⚠️');
+      }
+    }
+
+    function startAutoRedirect() {
+      let count = 2;
+      const countEl = document.getElementById('countdownSec');
+      countEl.textContent = count;
+      
+      autoRedirectTimer = setInterval(() => {
+        const check = document.getElementById('autoRedirectCheck');
+        if (!check || !check.checked) {
+          clearInterval(autoRedirectTimer);
+          return;
+        }
+        count--;
+        countEl.textContent = count;
+        if (count <= 0) {
+          clearInterval(autoRedirectTimer);
+          openRemotePC();
+        }
+      }, 1000);
+    }
+
+    async function triggerWake() {
+      let token = getGitHubToken();
+      if (!token) {
+        token = prompt('Vui lòng nhập GitHub Personal Access Token để kích hoạt Bật máy:');
+        if (!token || !token.trim()) return;
+        localStorage.setItem('gh_token', token.trim());
+      }
+
+      if (!confirm('⚡ Bạn có chắc muốn gửi tín hiệu Bật máy tính từ xa không?')) return;
+      
+      showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', '⏳', 6000);
+      const btnWake = document.getElementById('btnWake');
+      btnWake.disabled = true;
+      btnWake.innerHTML = '<span>📡 Đang kích nguồn...</span>';
+
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ event_type: 'wake' })
+        });
+
+        if (res.status === 204) {
+          showToast('🟢 Đã bắn tín hiệu Magic Packet! Máy đang khởi động (đợi ~35s)...', '✅', 10000);
+          
+          let waitSeconds = 40;
+          btnWake.innerHTML = `<span>⏳ Đợi máy mở (${waitSeconds}s)...</span>`;
+          
+          const pollTimer = setInterval(async () => {
+            waitSeconds -= 3;
+            if (waitSeconds > 0) {
+              btnWake.innerHTML = `<span>⏳ Đợi máy mở (${waitSeconds}s)...</span>`;
+              try {
+                const r = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
+                const d = await r.json();
+                if (d.url) {
+                  const rTest = await fetch(`${d.url}/api/status`);
+                  if (rTest.ok) {
+                    clearInterval(pollTimer);
+                    showToast('🎉 Máy tính đã khởi động thành công!', '🟢');
+                    checkConnection();
+                    return;
+                  }
+                }
+              } catch(e) {}
+            } else {
+              clearInterval(pollTimer);
+              btnWake.disabled = false;
+              btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
+              checkConnection();
+            }
+          }, 3000);
+
+        } else {
+          showToast('❌ Không gửi được lệnh kích nguồn (Mã lỗi ' + res.status + ')', '❌');
+          btnWake.disabled = false;
+          btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
+        }
+      } catch(e) {
+        showToast('❌ Lỗi kết nối tới GitHub Actions!', '❌');
+        btnWake.disabled = false;
+        btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
+      }
+    }
+
+    window.onload = function() {
+      checkConnection();
+    }
+  </script>
+</body>
+</html>
