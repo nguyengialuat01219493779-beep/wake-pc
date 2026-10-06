@@ -6,418 +6,1747 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Remote PC"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="theme-color" content="#17182b"/>
-  <title>Remote PC Hub</title>
+  <title>Remote PC</title>
+  <link rel="manifest" href="manifest.json"/>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --bg: #17182b;
+      --bg-color: #17182b;
       --card-bg: linear-gradient(145deg, #1e1f36, #141525);
-      --primary: #9d7bff;
-      --primary-gradient: linear-gradient(135deg, #ff8c70, #ffb56b);
-      --primary-purple: linear-gradient(135deg, #a855f7, #6366f1);
-      --text: #ffffff;
-      --muted: #8e8ea6;
-      --shadow-light: rgba(255, 255, 255, 0.04);
+      --card: #1c1d33;
+      --shadow-light: rgba(255, 255, 255, 0.05);
       --shadow-dark: rgba(0, 0, 0, 0.6);
-      --glow: rgba(168, 85, 247, 0.35);
+      --shadow-glow: rgba(135, 100, 255, 0.3);
+      --primary: #9d7bff;
+      --primary-dark: #6e44ff;
+      --primary-gradient: linear-gradient(135deg, #ff8c70, #ffb56b);
+      --foreground: #ffffff;
+      --muted-foreground: #7a7a93;
+      --border: rgba(255,255,255,0.02);
+      --placeholder: #5a5a73;
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      margin: 0; min-height: 100vh;
-      background: radial-gradient(circle at 15% 15%, #232545 0%, #111220 100%);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px 16px;
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{
+      margin:0;overflow:hidden;height:100vh;display:flex;flex-direction:column;
+      background-color: var(--bg-color);
+      background-image: radial-gradient(circle at 10% 10%, #232545 0%, #111220 100%);
+      color: var(--foreground);
+      font-family: system-ui, -apple-system, sans-serif;
     }
-    .card {
+
+    /* Pages */
+    .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:240px}
+    .page.hidden{display:none}
+    .page-enter{animation:fadeUp .3s cubic-bezier(0.2, 0.8, 0.2, 1)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Soft Neumorphic Shadows */
+    .neo-shadow {
       background: var(--card-bg);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 28px;
-      box-shadow: -6px -6px 18px var(--shadow-light), 10px 10px 28px var(--shadow-dark);
+      border: 1px solid var(--border);
+      box-shadow: -5px -5px 14px var(--shadow-light), 8px 8px 20px var(--shadow-dark);
     }
-    .btn-gradient {
+    .neo-shadow-inset {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 6px 6px 15px var(--shadow-dark);
+    }
+
+    /* Bottom nav */
+    .bottom-nav{
+      position:fixed;bottom:0;left:0;right:0;
+      height:72px;
+      display:flex;align-items:center;justify-content:space-around;
+      background: #141525;
+      box-shadow: 0 -8px 25px rgba(0,0,0,0.5);
+      padding:0 8px 8px;
+      z-index:100;
+    }
+    .nav-btn{
+      display:flex;align-items:center;justify-content:center;
+      flex:1;height:100%;padding:0;border:none;background:none;cursor:pointer;
+      color:var(--muted-foreground);transition:all .2s ease;
+    }
+    .nav-btn.active{
+      color:var(--primary);
+      filter: drop-shadow(0 0 8px var(--shadow-glow));
+    }
+    .nav-btn svg{width:22px;height:22px}
+    
+    /* FAB */
+    .fab-wrap{flex:1;display:flex;justify-content:center;align-items:center;position:relative}
+    .fab{
+      width:56px;height:56px;border-radius:18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      position:absolute;bottom:8px;
+      box-shadow: -4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);
+      transition:all .2s ease;
+    }
+    .fab:active{
+      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 6px 6px 15px var(--shadow-dark);
+      transform:scale(.95);
+    }
+    .fab.active{
       background: var(--primary-gradient);
-      box-shadow: 0 10px 25px rgba(255, 140, 112, 0.4);
-      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      color: #fff;
+      border: none;
+      box-shadow: 0 8px 25px rgba(255, 140, 112, 0.4);
     }
-    .btn-gradient:active {
-      transform: scale(0.96);
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+
+    /* Cards */
+    .card{
+      border-radius:24px;padding:18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: -6px -6px 16px var(--shadow-light), 10px 10px 24px var(--shadow-dark);
     }
-    .btn-wake {
-      background: var(--primary-purple);
-      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.45);
-      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Status ring */
+    .ring-svg{transform:rotate(-90deg)}
+    .ring-track{fill:none;stroke:#1a1b30;stroke-width:5}
+    .ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s ease,stroke .5s; filter:drop-shadow(0 0 6px var(--shadow-glow));}
+
+    /* Mic button */
+    .mic-btn{
+      width:96px;height:96px;border-radius:50%;
+      background: var(--card-bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .2s ease;
+      position: relative;
+      box-shadow: -6px -6px 18px var(--shadow-light), 12px 12px 25px var(--shadow-dark);
     }
-    .btn-wake:active {
-      transform: scale(0.96);
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+    .mic-btn:active{
+      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 8px 8px 20px var(--shadow-dark);
+      transform:scale(.96);
     }
-    .pulse-green {
-      animation: pulseGreen 2s infinite ease-in-out;
+    .mic-btn.listening{
+      background: var(--primary-gradient);
+      color:#fff;
+      box-shadow: 0 0 30px rgba(255,140,112,0.4);
+      animation:micPulse .8s ease-in-out infinite alternate;
     }
-    @keyframes pulseGreen {
-      0%, 100% { filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4)); }
-      50% { filter: drop-shadow(0 0 22px rgba(34, 197, 94, 0.8)); }
+    @keyframes micPulse{
+      from{transform:scale(1); box-shadow:0 10px 30px rgba(255,140,112,0.3)}
+      to{transform:scale(1.05); box-shadow:0 15px 40px rgba(255,140,112,0.6)}
     }
-    .pulse-red {
-      animation: pulseRed 2.5s infinite ease-in-out;
+
+    /* Wave bars */
+    .wave{display:flex;align-items:center;gap:4px;height:28px}
+    .wbar{width:4px;border-radius:4px;background:var(--primary);transition:all .3s ease; box-shadow:0 0 8px var(--shadow-glow)}
+    .wbar:nth-child(1){animation:w 1s .0s ease-in-out infinite}
+    .wbar:nth-child(2){animation:w 1s .15s ease-in-out infinite}
+    .wbar:nth-child(3){animation:w 1s .3s ease-in-out infinite}
+    .wbar:nth-child(4){animation:w 1s .45s ease-in-out infinite}
+    .wbar:nth-child(5){animation:w 1s .6s ease-in-out infinite}
+    @keyframes w{0%,100%{height:5px}50%{height:24px}}
+    .wave.silent .wbar{animation:none;height:5px;background:#2a2b45;box-shadow:none}
+
+    /* Pill chip */
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:12px;padding:10px 18px;border-radius:14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: -3px -3px 8px var(--shadow-light), 5px 5px 12px var(--shadow-dark);
+      color:var(--muted-foreground);font-weight:600;cursor:pointer;white-space:nowrap;
+      transition:all .2s ease;
     }
-    @keyframes pulseRed {
-      0%, 100% { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.3)); }
-      50% { filter: drop-shadow(0 0 22px rgba(239, 68, 68, 0.7)); }
+    .chip:active{
+      box-shadow: inset -3px -3px 8px var(--shadow-light), inset 5px 5px 12px var(--shadow-dark);
+      color: var(--primary);
     }
-  </style>
+    .chip svg { color: var(--primary); transition:all .2s ease; }
+    .chip:active svg { filter: drop-shadow(0 0 4px var(--shadow-glow)); }
+
+    /* Power buttons */
+    .power-card{
+      flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;
+      padding:22px 8px;border-radius:20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: -4px -4px 12px var(--shadow-light), 8px 8px 20px var(--shadow-dark);
+      cursor:pointer;transition:all .2s ease;
+    }
+    .power-card:active{
+      box-shadow: inset -4px -4px 12px var(--shadow-light), inset 8px 8px 20px var(--shadow-dark);
+      transform:scale(.96);
+    }
+    .power-card .emoji{display:flex;align-items:center;justify-content:center;height:32px; color:var(--primary); transition:all .2s ease;}
+    .power-card:active .emoji{filter: drop-shadow(0 0 8px var(--shadow-glow));}
+    .power-card .label{font-size:13px;font-weight:600;color:var(--foreground);}
+
+    /* Toggle */
+    .dir-toggle{
+      display:flex;gap:6px;padding:8px;border-radius:20px;
+      background: #111220;
+      box-shadow: inset 4px 4px 10px rgba(0,0,0,0.5), inset -4px -4px 10px rgba(255,255,255,0.03);
+    }
+    .dir-btn{flex:1;padding:12px;border-radius:14px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:none;color:var(--muted-foreground);transition:all .2s ease}
+    .dir-btn.on{
+      background: var(--card-bg);
+      color:var(--primary);
+      box-shadow: -3px -3px 8px var(--shadow-light), 5px 5px 12px var(--shadow-dark);
+    }
+
+    /* Settings row */
+    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .setting-row:last-child{border:none}
+
+    /* Badge */
+    .badge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px; background:#1a1b30;}
+
+    /* Confirm overlay */
+    #overlay{position:fixed;inset:0;background:rgba(17,18,32,0.85);z-index:200;display:none;align-items:flex-end;justify-content:center;padding-bottom:12px}
+    #overlay.show{display:flex}
+    #imagePreviewOverlay{position:fixed;inset:0;background:rgba(17,18,32,0.92);z-index:210;display:none;align-items:center;justify-content:center;padding:16px}
+    #imagePreviewOverlay.show{display:flex}
+    .sheet{
+      background: var(--card-bg);
+      border-radius:32px;width:100%;max-width:380px;padding:26px;margin:0 12px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+      border: 1px solid var(--border);
+    }
+
+    input,textarea{
+      color:var(--foreground);
+      background: #111220;
+      outline:none;border:none;
+      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.5), inset -3px -3px 8px rgba(255,255,255,0.03);
+      border-radius:14px;padding:14px 16px;font-family:inherit;width:100%;
+      transition:all .2s ease;
+    }
+    input::placeholder,textarea::placeholder{color:var(--placeholder)}
+    input:focus,textarea:focus{box-shadow: inset 3px 3px 8px rgba(0,0,0,0.6), inset -3px -3px 8px rgba(255,255,255,0.03), 0 0 0 1px var(--primary);}
+    button{cursor:pointer;font-family:inherit}
+</style>
 </head>
-<body class="w-full max-w-sm mx-auto">
+<body class="antialiased" style="max-width:390px;margin:0 auto">
+
+<!-- ═══════════════════════════════════════
+     PAGE: HOME
+═══════════════════════════════════════ -->
+<div id="page-home" class="page px-4 pt-5">
 
   <!-- Header -->
-  <div class="text-center mb-6">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-2" style="background:rgba(157,123,255,0.15);color:var(--primary);border:1px solid rgba(157,123,255,0.3)">
-      <span>⚡</span> LINK VĨNH VIỄN
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Remote PC</p>
+      <h1 class="text-2xl font-bold">PC của tôi</h1>
     </div>
-    <h1 class="text-2xl font-bold">Remote PC Hub</h1>
-    <p class="text-xs text-[var(--muted)] mt-1">Cổng điều khiển máy tính từ xa trọn đời</p>
+    <button onclick="goto('settings')" class="w-9 h-9 rounded-full flex items-center justify-center border border-[var(--border)]" style="background:var(--card)">
+      ⚙️
+    </button>
   </div>
 
-  <!-- Status Card -->
-  <div class="card w-full p-6 flex flex-col items-center text-center relative overflow-hidden mb-5">
+  <!-- Status Ring Card -->
+  <div class="card flex flex-col items-center py-6 mb-4 relative">
+    <div class="relative" style="width:180px;height:180px">
+      <svg class="ring-svg" width="180" height="180" viewBox="0 0 180 180">
+        <circle class="ring-track" cx="90" cy="90" r="75"/>
+        <circle id="ringFill" class="ring-fill" cx="90" cy="90" r="75"
+          stroke="#ef4444"
+          stroke-dasharray="471"
+          stroke-dashoffset="471"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div id="statusEmoji" class="w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#ff6b8b] mb-2 shadow-sm"></div>
+        <p id="statusLabel" class="text-sm font-semibold text-[var(--muted-foreground)]">Đang tắt</p>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="flex gap-3 mt-4 w-full px-2">
+      <div class="flex-1 text-center">
+        <p class="text-xs text-[var(--muted-foreground)]">Ping</p>
+        <p id="hPing" class="text-sm font-bold mt-0.5">—</p>
+      </div>
+      <div class="w-px" style="background:var(--border)"></div>
+      <div class="flex-1 text-center">
+        <p class="text-xs text-[var(--muted-foreground)]">SSH</p>
+        <p id="hSSH" class="text-sm font-bold mt-0.5">—</p>
+      </div>
+      <div class="w-px" style="background:var(--border)"></div>
+      <div class="flex-1 text-center">
+        <p class="text-xs text-[var(--muted-foreground)]">Uptime</p>
+        <p id="hUptime" class="text-sm font-bold mt-0.5">—</p>
+      </div>
+    </div>
+
+    <!-- Check button -->
+    <button onclick="checkStatus()" class="mt-4 text-xs px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
+      ↻ Kiểm tra kết nối
+    </button>
+  </div>
+
+  <!-- Power buttons -->
+  <div class="flex gap-3 mb-4">
+    <div class="power-card" onclick="doWake()">
+      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+      <span class="label">Bật máy</span>
+    </div>
+    <div class="power-card" onclick="doShutdown()">
+      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+      <span class="label">Tắt máy</span>
+    </div>
+    <div class="power-card" onclick="doRestart()">
+      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      <span class="label">Restart</span>
+    </div>
+  </div>
+
+  <!-- Assistant card -->
+  <div class="rounded-2xl p-4 mb-4" style="background:rgba(196,144,255,0.1);border:1px solid rgba(196,144,255,0.2);">
+    <p class="text-xs font-semibold mb-1" style="color:var(--primary)"><svg class="inline-block align-text-bottom mr-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg> Antigravity</p>
+    <p id="assistantMsg" class="text-sm text-[var(--foreground)]">Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> để bật hoặc dùng giọng nói.</p>
+    <button onclick="goto('cmd')" class="mt-3 text-xs px-4 py-2 rounded-full font-semibold active:opacity-70" style="background:var(--primary-dark);color:#fff">
+      Gửi lệnh →
+    </button>
+  </div>
+
+  <!-- Recent log preview -->
+  <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">Hoạt động gần đây</p>
+  <div id="homeLog" class="flex flex-col gap-2 mb-4">
+    <p class="text-xs text-[var(--muted-foreground)] text-center py-3">Chưa có hoạt động</p>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: COMMANDS
+═══════════════════════════════════════ -->
+<div id="page-cmd" class="page hidden px-4 pt-5">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">AI Control</p>
+      <h1 class="text-2xl font-bold">Gửi lệnh</h1>
+    </div>
+    <div id="cmdOnlineDot" class="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] px-3 py-1.5 rounded-full border border-[var(--border)]" style="background:var(--card)">
+      <span class="w-2 h-2 rounded-full bg-[#ff6b8b] inline-block"></span>
+      Offline
+    </div>
+  </div>
+
+  <!-- Mic section -->
+  <div class="card flex flex-col items-center py-8 mb-4">
+    <div class="wave mb-5 silent" id="waveViz">
+      <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+      <div class="wbar"></div><div class="wbar"></div>
+    </div>
+
+    <button id="micBtn" class="mic-btn mb-4" onclick="toggleMic()"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></button>
+
+    <p id="micHint" class="text-sm text-[var(--muted-foreground)]">Nhấn để nói bằng tiếng Việt</p>
+    <p id="transcript" class="text-base font-semibold mt-2 min-h-6 text-center"></p>
+  </div>
+
+  <!-- Divider -->
+  <div class="flex items-center gap-3 mb-4">
+    <div class="flex-1 h-px" style="background:var(--border)"></div>
+    <p class="text-xs text-[var(--muted-foreground)]">hoặc gõ lệnh</p>
+    <div class="flex-1 h-px" style="background:var(--border)"></div>
+  </div>
+
+    <!-- Text input -->
+  <div class="card mb-4">
+    <textarea id="cmdText" placeholder="Nhập lệnh hoặc nói bằng tiếng Việt…&#10;Ví dụ: mở Cốc Cốc, mở Zalo, chụp màn hình..." rows="2"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendText();}"
+      class="w-full resize-none text-sm border-none"></textarea>
+    <button onclick="sendText()"
+      class="w-full py-3 rounded-xl text-sm font-semibold mt-3 active:opacity-70 neo-shadow"
+      style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">
+      Gửi lệnh ↗
+    </button>
+  </div>
+
+  <!-- Command Response Chat Box -->
+  <div class="card mb-4 p-4">
+    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">Phản hồi từ máy tính</p>
+    <div id="cmdChatList" class="flex flex-col gap-2" style="max-height: 220px; overflow-y: auto;">
+      <div class="text-xs text-[var(--muted-foreground)] text-center py-2">Sẵn sàng nhận lệnh từ bạn...</div>
+    </div>
+  </div>
+
+  <!-- Quick chips -->
+  <p class="text-xs text-[var(--muted-foreground)] mb-2">Lệnh nhanh (Chạm là mở ngay)</p>
+  <div class="flex gap-2 flex-wrap mb-4">
+    <button class="chip" onclick="quickText('mở Cốc Cốc')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg> Cốc Cốc</button>
+    <button class="chip" onclick="quickText('mở Zalo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Zalo</button>
+    <button class="chip" onclick="quickText('mở Chrome')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Chrome</button>
+    <button class="chip" onclick="quickText('mở Notepad')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Notepad</button>
+    <button class="chip" onclick="quickText('mở AutoCAD')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6"/><path d="m15 9-6 6"/></svg> AutoCAD</button>
+    <button class="chip" onclick="quickText('chụp màn hình')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Screenshot</button>
+    <button class="chip" onclick="quickText('mở ổ d')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg> Ổ D:\</button>
+    <button class="chip" onclick="quickText('tắt màn hình')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6.364 6.364 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> Tắt màn hình</button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: FILE TRANSFER
+═══════════════════════════════════════ -->
+<div id="page-file" class="page hidden px-4 pt-5">
+
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Transfer</p>
+      <h1 class="text-2xl font-bold">Gửi File</h1>
+    </div>
+  </div>
+
+  <!-- Direction toggle -->
+  <div class="dir-toggle mb-4">
+    <button class="dir-btn on" id="dirSendBtn" onclick="setDir('send')"><svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> → <svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> &nbsp;Lên PC</button>
+    <button class="dir-btn" id="dirRecvBtn" onclick="setDir('recv')"><svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> → <svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> &nbsp;Về máy</button>
+  </div>
+
+  <!-- SEND section -->
+  <div id="sec-send">
+    <div class="card flex flex-col items-center py-8 mb-4">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-3 text-[var(--muted-foreground)]"
+        style="background:var(--background);border:2px dashed var(--border)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 16 4-4 4 4"/></svg></div>
+      <p class="font-semibold mb-1">Chọn file từ điện thoại</p>
+      <p class="text-xs text-[var(--muted-foreground)] text-center mb-5">Tự động lưu vào D:\Remote PC</p>
+      <input type="file" id="phoneFileInput" multiple style="display:none" onchange="uploadSelectedFiles(this)">
+      <button onclick="document.getElementById('phoneFileInput').click()" class="w-full max-w-xs py-3 rounded-2xl text-sm font-semibold active:opacity-70"
+        style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">
+        Chọn file từ điện thoại…
+      </button>
+    </div>
+    <div id="sendHistory" class="flex flex-col gap-2">
+      <p class="text-xs text-[var(--muted-foreground)] text-center py-2">Chưa có file nào</p>
+    </div>
+  </div>
+
+  
+  <!-- RECEIVE section -->
+  <div id="sec-recv" class="hidden">
     
-    <!-- Status Ring / Icon -->
-    <div class="relative w-36 h-36 flex items-center justify-center mb-4">
-      <div id="statusGlowRing" class="w-32 h-32 rounded-full border-4 border-[#252849] flex items-center justify-center transition-all duration-500">
-        <div id="statusDot" class="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#353859]">
-          ⏳
-        </div>
+    <!-- AI Search Card -->
+    <div class="card mb-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[var(--primary)]"><svg class="inline-block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg></span>
+        <p class="text-xs text-[var(--primary)] font-semibold uppercase tracking-wider">Trợ lý AI Tìm File</p>
+      </div>
+      <p class="text-xs text-[var(--muted-foreground)] mb-3">Chỉ cần ra lệnh, AI sẽ quét PC để tìm file mới nhất</p>
+      <div class="flex gap-2">
+        <input id="aiFileCmd" type="text" placeholder="Vd: Gửi file autocad đồ án sáng nay..."
+          class="flex-1 text-sm border border-[var(--border)] rounded-xl px-3 py-2 "/>
+        <button onclick="analyzeFile()"
+          class="px-4 py-2 rounded-xl text-sm font-bold active:opacity-60 whitespace-nowrap"
+          style="background:var(--primary);color:#000; box-shadow:0 0 16px rgba(163,76,255,0.4)">
+          Tìm & Gửi
+        </button>
       </div>
     </div>
 
-    <!-- Status Text -->
-    <h2 id="statusTitle" class="text-lg font-bold">Đang kiểm tra kết nối...</h2>
-    <p id="statusDesc" class="text-xs text-[var(--muted)] mt-1 mb-4">Đang dò tìm server máy tính...</p>
-
-    <!-- Info Stats (When online) -->
-    <div id="statsRow" class="hidden w-full grid grid-cols-3 gap-2 py-3 px-2 rounded-2xl mb-4 text-center border border-white/5" style="background:#131422">
-      <div>
-        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">Uptime</p>
-        <p id="statUptime" class="text-xs font-bold mt-0.5 text-white">—</p>
+    <!-- File Explorer Card -->
+    <div class="card mb-4 p-0 overflow-hidden">
+      <div class="px-4 pt-4 pb-2 border-b border-[var(--border)] flex justify-between items-center ">
+        <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Duyệt File PC (Trực tiếp)</p>
       </div>
-      <div>
-        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">CPU</p>
-        <p id="statCPU" class="text-xs font-bold mt-0.5 text-white">—</p>
-      </div>
-      <div>
-        <p class="text-[10px] text-[var(--muted)] uppercase font-semibold">RAM</p>
-        <p id="statRAM" class="text-xs font-bold mt-0.5 text-white">—</p>
-      </div>
-    </div>
-
-    <!-- MAIN ACTION BUTTON -->
-    <div id="btnContainer" class="w-full">
-      <!-- Button Online (Redirect to PC) -->
-      <button id="btnConnect" onclick="openRemotePC()" class="hidden w-full py-3.5 rounded-2xl text-sm font-bold text-white btn-gradient flex items-center justify-center gap-2">
-        <span>MỞ REMOTE PC NGAY</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-      </button>
-
-      <!-- Button Offline (Wake on LAN) -->
-      <button id="btnWake" onclick="triggerWake()" class="hidden w-full py-3.5 rounded-2xl text-sm font-bold text-white btn-wake flex items-center justify-center gap-2">
-        <span>⚡ BẬT MÁY TỪ XA</span>
-      </button>
-
-      <!-- Loading Placeholder -->
-      <div id="loadingBtn" class="w-full py-3.5 rounded-2xl text-xs font-semibold text-[var(--muted)] border border-white/10 flex items-center justify-center gap-2" style="background:#151627">
-        <svg class="animate-spin h-4 w-4 text-[var(--primary)]" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        Đang dò tìm server...
-      </div>
-    </div>
-
-    <!-- Auto redirect indicator -->
-    <div id="autoRedirectBox" class="hidden mt-3 text-xs text-[var(--muted)] flex items-center justify-center gap-1.5">
-      <input type="checkbox" id="autoRedirectCheck" checked class="accent-[var(--primary)] rounded cursor-pointer">
-      <label for="autoRedirectCheck" class="cursor-pointer">Tự động chuyển tiếp sau <span id="countdownSec" class="font-bold text-white">2</span>s</label>
-    </div>
-
-  </div>
-
-  <!-- Manual Refresh / Direct Link Card -->
-  <div class="card w-full p-4 mb-4 text-xs text-[var(--muted)]">
-    <div class="flex items-center justify-between mb-2">
-      <span class="font-semibold text-white">📡 Trạng thái đường truyền</span>
-      <button onclick="checkConnection()" class="px-2.5 py-1 rounded-lg border border-white/10 text-white font-medium active:opacity-60" style="background:#1a1c30">
-        ↻ Kiểm tra lại
-      </button>
-    </div>
-    <p id="activeUrlText" class="truncate font-mono text-[11px] text-[var(--primary)] py-1.5 px-2.5 rounded-xl border border-white/5 mb-1" style="background:#111220">
-      Đang tải link...
-    </p>
-    <p id="updatedTimeText" class="text-[10px] text-right opacity-70">—</p>
-  </div>
-
-  <!-- iPhone Add to Home Screen tip -->
-  <div class="text-center px-4 py-3 text-xs text-[var(--muted)] border border-white/5 rounded-2xl w-full" style="background:rgba(255,255,255,0.02)">
-    💡 <b>Mẹo trên iPhone:</b> Bấm biểu tượng <b>Chia sẻ (Share ⎋)</b> ➔ Chọn <b>"Thêm vào MH chính"</b> để lưu App cố định vĩnh viễn!
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="fixed top-4 left-4 right-4 max-w-sm mx-auto p-3.5 rounded-2xl text-xs font-semibold text-white shadow-2xl transition-all duration-300 transform -translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-2 border border-purple-500/30" style="background:linear-gradient(135deg,#1f2038,#131424)">
-    <span id="toastIcon">🔔</span>
-    <span id="toastMsg" class="flex-1">Thông báo</span>
-  </div>
-
-  <script>
-    const GITHUB_REPO = 'nguyengialuat01219493779-beep/wake-pc';
-    
-    // Lưu token từ URL Hash nếu có vào localStorage
-    if (window.location.hash.includes('token=')) {
-      const match = window.location.hash.match(/token=([^&]+)/);
-      if (match && match[1]) {
-        localStorage.setItem('gh_token', decodeURIComponent(match[1]));
-        history.replaceState(null, null, window.location.pathname);
-      }
-    }
-
-    let targetUrl = '';
-    let isPCAlive = false;
-    let autoRedirectTimer = null;
-
-    function getGitHubToken() {
-      return localStorage.getItem('gh_token') || '';
-    }
-
-    function showToast(msg, icon = '🔔', duration = 4000) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toastMsg').innerHTML = msg;
-      document.getElementById('toastIcon').textContent = icon;
-      toast.style.transform = 'translateY(0)';
-      toast.style.opacity = '1';
-      setTimeout(() => {
-        toast.style.transform = 'translateY(-100px)';
-        toast.style.opacity = '0';
-      }, duration);
-    }
-
-    async function checkConnection() {
-      const dot = document.getElementById('statusDot');
-      const ring = document.getElementById('statusGlowRing');
-      const title = document.getElementById('statusTitle');
-      const desc = document.getElementById('statusDesc');
-      const btnConnect = document.getElementById('btnConnect');
-      const btnWake = document.getElementById('btnWake');
-      const loadingBtn = document.getElementById('loadingBtn');
-      const statsRow = document.getElementById('statsRow');
-      const autoBox = document.getElementById('autoRedirectBox');
-
-      dot.textContent = '⏳';
-      dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#353859]';
-      ring.className = 'w-32 h-32 rounded-full border-4 border-[#252849] flex items-center justify-center transition-all duration-500';
-      title.textContent = 'Đang kiểm tra kết nối...';
-      desc.textContent = 'Đang dò tìm server máy tính...';
-      loadingBtn.classList.remove('hidden');
-      btnConnect.classList.add('hidden');
-      btnWake.classList.add('hidden');
-      statsRow.classList.add('hidden');
-      autoBox.classList.add('hidden');
-
-      if (autoRedirectTimer) {
-        clearInterval(autoRedirectTimer);
-        autoRedirectTimer = null;
-      }
-
-      try {
-        // 1. Lay link truc tiep qua GitHub API (0s cache) hoac fallback raw
-        let data = null;
-        try {
-          const rApi = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/active_link.json`);
-          if (rApi.ok) {
-            const jMeta = await rApi.json();
-            data = JSON.parse(decodeURIComponent(escape(atob(jMeta.content))));
-          }
-        } catch(e) {}
-        if (!data) {
-          const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
-          if (!res.ok) throw new Error("Chua co active_link.json");
-          data = await res.json();
-        }
-        
-        targetUrl = data.url;
-        document.getElementById('activeUrlText').textContent = data.url || 'Chưa có link';
-        document.getElementById('updatedTimeText').textContent = 'Cập nhật lúc: ' + (data.updated_at || 'Mới đây');
-
-        // 2. Kiểm tra xem máy tính có đang Online không
-        let online = false;
-        let pcData = null;
-
-        // Ưu tiên thử Wi-Fi nhà trước nếu đang ở nhà
-        if (data.local_ip) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1200);
-            const rLocal = await fetch(`http://${data.local_ip}:8000/api/status`, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (rLocal.ok) {
-              online = true;
-              targetUrl = `http://${data.local_ip}:8000`;
-              pcData = await rLocal.json();
-            }
-          } catch(e) {}
-        }
-
-        // Nếu chưa online nội bộ, kiểm tra qua link Cloudflare
-        if (!online && targetUrl) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500);
-            const rCF = await fetch(`${targetUrl}/api/status`, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (rCF.ok) {
-              online = true;
-              pcData = await rCF.json();
-            }
-          } catch(e) {}
-        }
-
-        loadingBtn.classList.add('hidden');
-
-        if (online && pcData) {
-          isPCAlive = true;
-          dot.textContent = '🟢';
-          dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#16a34a] pulse-green';
-          ring.className = 'w-32 h-32 rounded-full border-4 border-emerald-500 flex items-center justify-center transition-all duration-500 pulse-green';
-          title.textContent = 'Máy tính đang BẬT';
-          desc.textContent = targetUrl.includes('192.168.') ? 'Đang kết nối qua Wi-Fi nhà siêu nhanh (0.02s)' : 'Đang kết nối trực tiếp qua Internet (4G)';
-
-          document.getElementById('statUptime').textContent = pcData.uptime || 'Online';
-          document.getElementById('statCPU').textContent = `${pcData.cpu}%`;
-          document.getElementById('statRAM').textContent = `${pcData.ram}%`;
-          statsRow.classList.remove('hidden');
-
-          btnConnect.classList.remove('hidden');
-          autoBox.classList.remove('hidden');
-
-          startAutoRedirect();
-        } else {
-          isPCAlive = false;
-          dot.textContent = '🔴';
-          dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg transition-all duration-500 bg-[#dc2626] pulse-red';
-          ring.className = 'w-32 h-32 rounded-full border-4 border-red-500 flex items-center justify-center transition-all duration-500 pulse-red';
-          title.textContent = 'Máy tính đang TẮT';
-          desc.textContent = 'Nhấn nút bên dưới để phát tín hiệu bật nguồn máy tính từ xa!';
-          btnWake.classList.remove('hidden');
-        }
-
-      } catch(e) {
-        loadingBtn.classList.add('hidden');
-        dot.textContent = '🔴';
-        dot.className = 'w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg bg-[#dc2626]';
-        title.textContent = 'Máy tính đang TẮT';
-        desc.textContent = 'Không tìm thấy kết nối tới máy tính. Bạn có thể bật máy từ xa.';
-        btnWake.classList.remove('hidden');
-      }
-    }
-
-    function openRemotePC() {
-      if (targetUrl) {
-        window.location.href = targetUrl;
-      } else {
-        showToast('Chưa có link máy tính!', '⚠️');
-      }
-    }
-
-    function startAutoRedirect() {
-      let count = 2;
-      const countEl = document.getElementById('countdownSec');
-      countEl.textContent = count;
       
-      autoRedirectTimer = setInterval(() => {
-        const check = document.getElementById('autoRedirectCheck');
-        if (!check || !check.checked) {
-          clearInterval(autoRedirectTimer);
+      <div id="fileExplorerTree" class="p-2 flex flex-col gap-1" style="max-height: 320px; overflow-y: auto; overflow-x: hidden;"></div>
+    </div>
+  </div>
+
+  <!-- File result card -->
+  <div id="fileResult" class="hidden card mb-4">
+    <div class="flex items-center gap-3 mb-4">
+      <span id="fIcon" class="text-3xl flex items-center justify-center p-2 rounded-xl bg-[var(--primary-dark)] border border-[var(--primary)]/30"><svg class="inline-block text-[var(--primary)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+      <div class="flex-1 min-w-0">
+        <p id="fName" class="font-semibold truncate"></p>
+        <p id="fSize" class="text-xs text-[var(--muted-foreground)]"></p>
+      </div>
+      <span id="fBadge" class="badge"></span>
+    </div>
+
+    <!-- Method box -->
+    <div id="fMethod" class="rounded-xl p-3 mb-4 text-xs" style="background:var(--background)"></div>
+
+    <!-- Actions -->
+    <div id="fActions" class="flex gap-2"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: HISTORY
+═══════════════════════════════════════ -->
+<div id="page-log" class="page hidden px-4 pt-5">
+
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Activity</p>
+      <h1 class="text-2xl font-bold">Lịch sử</h1>
+    </div>
+    <button onclick="clearLog()" class="text-xs px-3 py-1.5 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
+      Xoá tất cả
+    </button>
+  </div>
+
+  <div id="fullLog" class="flex flex-col gap-2">
+    <p class="text-xs text-[var(--muted-foreground)] text-center py-8">Chưa có hoạt động nào</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE: SETTINGS
+═══════════════════════════════════════ -->
+<div id="page-settings" class="page hidden px-4 pt-5">
+
+  <div class="flex items-center justify-between mb-5">
+    <div>
+      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Cài đặt</p>
+      <h1 class="text-2xl font-bold">Settings</h1>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-3">Cấu hình hệ thống</p>
+    
+    <!-- Gemini AI Agent -->
+    <div class="setting-row cursor-pointer active:opacity-60" onclick="configGeminiKey()">
+      <div>
+        <p class="text-sm font-medium">Trợ lý AI Agent (Gemini AI)</p>
+        <p id="settingGeminiStatus" class="text-xs text-[var(--muted-foreground)]">Chưa cài đặt (Dùng bộ lệnh mặc định)</p>
+      </div>
+      <span class="text-xs text-[var(--primary)] font-semibold">Cài đặt 🤖</span>
+    </div>
+
+    <!-- GitHub WOL Token -->
+    <div class="setting-row cursor-pointer active:opacity-60" onclick="configGitHubWOL()">
+      <div>
+        <p class="text-sm font-medium">Bật máy từ xa (GitHub WOL)</p>
+        <p id="settingGHStatus" class="text-xs text-[var(--muted-foreground)]">Chưa cấu hình</p>
+      </div>
+      <span class="text-xs text-[var(--primary)] font-semibold">Cài đặt ⚙️</span>
+    </div>
+    
+    <!-- Tên PC -->
+    <div class="setting-row cursor-pointer active:opacity-60" onclick="changePCName()">
+      <div>
+        <p class="text-sm font-medium">Tên PC</p>
+        <p id="settingPCName" class="text-xs text-[var(--muted-foreground)]">PC của tôi</p>
+      </div>
+      <span class="text-xs text-[var(--primary)] font-semibold">Đổi tên ✏️</span>
+    </div>
+
+    <!-- Ngưỡng chuyển file -->
+    <div class="setting-row cursor-pointer active:opacity-60" onclick="toggleThreshold()">
+      <div>
+        <p class="text-sm font-medium">Ngưỡng gửi trực tiếp</p>
+        <p class="text-xs text-[var(--muted-foreground)]">Dưới ngưỡng gửi thẳng, trên gửi qua Drive</p>
+      </div>
+      <span id="settingThreshold" class="badge" style="background:var(--primary-dark);color:var(--primary)">50 MB</span>
+    </div>
+
+    <!-- Google Drive status -->
+    <div class="setting-row">
+      <div>
+        <p class="text-sm font-medium">Google Drive Thư mục</p>
+        <p class="text-xs text-[var(--muted-foreground)]">Ổ G:\My Drive\Remote PC</p>
+      </div>
+      <span class="badge" style="background:rgba(34,197,94,.15);color:#16a34a">Đã kết nối</span>
+    </div>
+
+    <!-- Cloudflare Tunnel status -->
+    <div class="setting-row">
+      <div>
+        <p class="text-sm font-medium">Cloudflare Tunnel</p>
+        <p class="text-xs text-[var(--muted-foreground)]">Đang truyền trực tiếp 24/7</p>
+      </div>
+      <span class="badge" style="background:rgba(34,197,94,.15);color:#16a34a">Online</span>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-3">Dữ liệu & Bộ nhớ</p>
+    <div class="setting-row cursor-pointer active:opacity-60" onclick="clearLog()">
+      <div>
+        <p class="text-sm font-medium text-red-400">Xoá toàn bộ lịch sử lệnh</p>
+        <p class="text-xs text-[var(--muted-foreground)]">Làm sạch bộ nhớ lưu trữ trên máy</p>
+      </div>
+      <span class="text-xs text-red-400 font-semibold">Xóa 🗑️</span>
+    </div>
+  </div>
+
+  <p class="text-xs text-[var(--muted-foreground)] text-center">v1.2.0 • Remote PC Controller</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     BOTTOM NAV
+═══════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <!-- Home -->
+  <button class="nav-btn active" id="nav-home" onclick="goto('home')">
+    <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    
+  </button>
+
+  <!-- Commands -->
+  <button class="nav-btn" id="nav-cmd" onclick="goto('cmd')">
+    <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+    
+  </button>
+
+  <!-- FAB -->
+  <div class="fab-wrap">
+    <button class="fab" id="nav-file" onclick="goto('file')" title="Gửi file">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+    </button>
+  </div>
+
+  <!-- History -->
+  <button class="nav-btn" id="nav-log" onclick="goto('log')">
+    <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    
+  </button>
+
+  <!-- Settings -->
+  <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
+    <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
+    
+  </button>
+</nav>
+
+<!-- CONFIRM SHEET -->
+<div id="overlay" onclick="closeSheet()">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <p id="sheetTitle" class="font-bold text-lg text-center mb-1"></p>
+    <p id="sheetDesc" class="text-sm text-[var(--muted-foreground)] text-center mb-5"></p>
+    <div class="flex gap-3">
+      <button onclick="closeSheet()" class="flex-1 py-3 rounded-2xl text-sm font-medium border border-[var(--border)] active:opacity-60">Huỷ</button>
+      <button id="sheetConfirm" class="flex-1 py-3 rounded-2xl text-sm font-semibold active:opacity-70 neo-shadow"
+        style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE PREVIEW & SAVE MODAL -->
+<div id="imagePreviewOverlay" onclick="closeImagePreview()">
+  <div class="sheet text-center" onclick="event.stopPropagation()" style="margin:auto;">
+    <p id="imgPreviewTitle" class="font-bold text-base text-center mb-1 text-white">🖼️ Lưu Ảnh Vào Thiết Bị</p>
+    <p class="text-xs text-[var(--muted-foreground)] mb-3 leading-relaxed">
+      💡 <b>Chạm và giữ vào ảnh</b> dưới đây ➔ Chọn <b>"Lưu hình ảnh"</b> để lưu vào Cuộn Camera (Ảnh)!
+    </p>
+    <div class="rounded-2xl overflow-hidden mb-4 border border-[var(--border)] bg-[#111220] flex items-center justify-center p-2" style="max-height:260px;">
+      <img id="imgPreviewTag" src="" alt="Preview" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:12px;" />
+    </div>
+    <div class="flex gap-2">
+      <button id="btnSaveToFiles" class="flex-1 py-3 rounded-2xl text-xs font-bold neo-shadow" style="background:var(--card-bg);color:var(--primary);border:1px solid var(--border);">📁 Lưu Vào Tệp</button>
+      <button onclick="closeImagePreview()" class="py-3 px-5 rounded-2xl text-xs font-semibold border border-[var(--border)] active:opacity-60">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONSTANTS & GLOBAL CONFIG ──────────────────────────
+const IS_GITHUB_PAGES = window.location.hostname.includes('github.io');
+const DEFAULT_GH_REPO = 'nguyengialuat01219493779-beep/wake-pc';
+
+// Lấy token từ URL hash nếu có và xóa khỏi thanh URL (VD: #token=ghp_...)
+if (window.location.hash.includes('token=')) {
+  const match = window.location.hash.match(/token=([^&]+)/);
+  if (match && match[1]) {
+    localStorage.setItem('gh_token', match[1]);
+    history.replaceState(null, null, window.location.pathname);
+  }
+}
+
+// BACKEND_URL: If on GitHub Pages, uses cached tunnel URL; empty string for LAN/localhost
+let BACKEND_URL = IS_GITHUB_PAGES ? (localStorage.getItem('remote_backend_url') || '') : '';
+
+function api(endpoint) {
+  if (!IS_GITHUB_PAGES && !BACKEND_URL) return endpoint;
+  const base = (BACKEND_URL || '').replace(/\/+$/, '');
+  const path = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  return base ? (base + path) : path;
+}
+
+async function safeFetch(endpoint, options = {}, timeoutMs = 6000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(api(endpoint), {
+      ...options,
+      signal: controller.signal
+    });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function syncBackendUrl() {
+  if (!IS_GITHUB_PAGES) return;
+  try {
+    const token = localStorage.getItem('gh_token');
+    const repo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
+    const headers = { 'Accept': 'application/vnd.github.v3+json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`https://api.github.com/repos/${repo}/contents/active_link.json?t=${Date.now()}`, {
+      headers,
+      cache: 'no-store'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rawContent = atob(data.content.replace(/\s/g, ''));
+      const parsed = JSON.parse(rawContent);
+      if (parsed.url) {
+        const cleanUrl = parsed.url.replace(/\/+$/, '');
+        if (cleanUrl !== BACKEND_URL) {
+          BACKEND_URL = cleanUrl;
+          localStorage.setItem('remote_backend_url', cleanUrl);
+          console.log('✅ Synchronized active backend tunnel:', cleanUrl);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Lỗi đồng bộ link tunnel từ GitHub:', err);
+  }
+}
+
+// ── STATE ──────────────────────────────────────────────
+let pcOn = false;
+let logs = [];
+let currentPage = 'home';
+let sheetCallback = null;
+
+const pages = ['home','cmd','file','log','settings'];
+
+function goto(page) {
+  pages.forEach(p => {
+    document.getElementById(`page-${p}`).classList.toggle('hidden', p !== page);
+    if (p !== page) document.getElementById(`page-${p}`).classList.remove('page-enter');
+  });
+  document.getElementById(`page-${page}`).classList.add('page-enter');
+
+  ['home','cmd','log','settings'].forEach(p => {
+    const btn = document.getElementById(`nav-${p}`);
+    if (btn) btn.classList.toggle('active', p === page);
+  });
+  const fab = document.getElementById('nav-file');
+  if (fab) fab.classList.toggle('active', page === 'file');
+
+  currentPage = page;
+  if (page === 'cmd') updateCmdOnline();
+}
+
+// ── REAL STATUS ─────────────────────────────────────────
+function setPC(on) {
+  pcOn = on;
+  const fill = document.getElementById('ringFill');
+  if (fill) {
+    fill.style.stroke = on ? '#22c55e' : '#ef4444';
+    fill.style.strokeDashoffset = on ? '118' : '471';
+  }
+
+  const emoji = document.getElementById('statusEmoji');
+  if (emoji) {
+    emoji.className = on 
+      ? 'w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#4deeea] mb-2 shadow-sm' 
+      : 'w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#ff6b8b] mb-2 shadow-sm';
+  }
+  document.getElementById('statusLabel').textContent = on ? 'Đang bật' : 'Đang tắt';
+  updateCmdOnline();
+}
+
+function updateCmdOnline() {
+  const dot = document.getElementById('cmdOnlineDot');
+  if (!dot) return;
+  dot.innerHTML = `<span class="w-2 h-2 rounded-full inline-block ${pcOn ? 'bg-[#4deeea]' : 'bg-[#ff6b8b]'}"></span> ${pcOn ? 'Online' : 'Offline'}`;
+}
+
+async function checkStatus() {
+  addLog('system','🔍 Đang kiểm tra kết nối tới PC…');
+  try {
+    if (IS_GITHUB_PAGES && !BACKEND_URL) {
+      await syncBackendUrl();
+    }
+    const res = await safeFetch('/api/status', {}, 5000);
+    if (res.ok) {
+      const data = await res.json();
+      setPC(true);
+      document.getElementById('hUptime').textContent = data.uptime || '—';
+      document.getElementById('hPing').textContent = IS_GITHUB_PAGES ? 'Cloudflare' : 'LAN';
+      document.getElementById('hSSH').textContent = `${data.cpu}% CPU`;
+      addLog('result', `🟢 Online — Uptime: ${data.uptime} | CPU: ${data.cpu}% | RAM: ${data.ram}%`);
+      const ast = document.getElementById('assistantMsg');
+      if (ast) ast.textContent = `Máy tính đang hoạt động bình thường (${data.uptime}). Sẵn sàng nhận lệnh!`;
+      return true;
+    } else {
+      setPC(false);
+      addLog('result','🔴 Không phản hồi');
+      return false;
+    }
+  } catch(e) {
+    // Nếu lỗi kết nối trên GitHub Pages, thử làm mới link tunnel từ GitHub và thử lại 1 lần
+    if (IS_GITHUB_PAGES) {
+      try {
+        const oldUrl = BACKEND_URL;
+        await syncBackendUrl();
+        if (BACKEND_URL && BACKEND_URL !== oldUrl) {
+          const res = await safeFetch('/api/status', {}, 5000);
+          if (res.ok) {
+            const data = await res.json();
+            setPC(true);
+            document.getElementById('hUptime').textContent = data.uptime || '—';
+            document.getElementById('hPing').textContent = 'Cloudflare';
+            document.getElementById('hSSH').textContent = `${data.cpu}% CPU`;
+            addLog('result', `🟢 Online — Uptime: ${data.uptime} | CPU: ${data.cpu}% | RAM: ${data.ram}%`);
+            const ast = document.getElementById('assistantMsg');
+            if (ast) ast.textContent = `Máy tính đang hoạt động bình thường (${data.uptime}). Sẵn sàng nhận lệnh!`;
+            return true;
+          }
+        }
+      } catch(retryErr) {}
+    }
+    setPC(false);
+    addLog('result','🔴 Offline');
+    document.getElementById('hPing').textContent = '—';
+    document.getElementById('hSSH').textContent = '—';
+    document.getElementById('hUptime').textContent = '—';
+    const ast = document.getElementById('assistantMsg');
+    if (ast) ast.innerHTML = 'Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> <b>Bật máy</b> để khởi động từ xa.';
+    return false;
+  }
+}
+
+// ── REAL POWER ACTIONS ──────────────────────────────────
+let wakePollTimer = null;
+function startWakePolling() {
+  if (wakePollTimer) clearInterval(wakePollTimer);
+  let seconds = 0;
+  const assistantMsg = document.getElementById('assistantMsg');
+  if (assistantMsg) assistantMsg.textContent = '⏳ Đang kích nguồn máy tính... Đang chờ PC khởi động và kết nối.';
+
+  wakePollTimer = setInterval(async () => {
+    seconds += 4;
+    if (seconds > 90) {
+      clearInterval(wakePollTimer);
+      wakePollTimer = null;
+      if (assistantMsg) assistantMsg.innerHTML = 'Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> <b>Bật máy</b> để thử lại.';
+      showToast('⚠️ Quá thời gian chờ (90s). Nếu máy chưa bật, hãy kiểm tra lại nguồn điện PC/Router.', 6000);
+      return;
+    }
+    
+    if (IS_GITHUB_PAGES) {
+      await syncBackendUrl();
+    }
+    const isOnline = await checkStatus();
+    if (isOnline) {
+      clearInterval(wakePollTimer);
+      wakePollTimer = null;
+      showToast('🎉 Máy tính đã khởi động và kết nối thành công!', 6000);
+      if (assistantMsg) assistantMsg.textContent = 'PC đã online! Sẵn sàng nhận lệnh.';
+      initRealFS();
+    }
+  }, 4000);
+}
+
+async function doWake() {
+  if (pcOn) {
+    showToast('ℹ️ Máy tính đang bật sẵn rồi!');
+    return;
+  }
+  
+  const ghToken = localStorage.getItem('gh_token');
+  const ghRepo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
+
+  if (!ghToken) {
+    confirm_sheet('⚡ Cần thiết lập Bật máy', 'Chưa có thông tin GitHub Token để kích hoạt Wake-on-LAN. Hãy vào Cài đặt (⚙️) để nhập Token nhé!', () => {
+      goto('settings');
+    });
+    return;
+  }
+    showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', 5000);
+    addLog('user', '⚡ Bật máy tính từ xa');
+    try {
+      const res = await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ghToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({event_type: 'wake'})
+      });
+      if (res.status === 204) {
+        showToast('🟢 Đã bắn tín hiệu Magic Packet! Đang đợi máy khởi động... (~30-60 giây)', 8000);
+        addLog('result', '🟢 Đã gửi tín hiệu bật máy thành công');
+        startWakePolling();
+      } else {
+        showToast('❌ Không gửi được lệnh tới GitHub (Mã lỗi: ' + res.status + ')');
+      }
+    } catch(e) {
+      showToast('❌ Lỗi kết nối tới GitHub');
+    }
+  });
+}
+
+function doShutdown() {
+  if (!pcOn) { addLog('system','ℹ️ Máy đang tắt rồi!'); return; }
+  confirm_sheet('🛡️ Tắt máy tính an toàn?','Máy sẽ lần lượt thực hiện Save As các tài liệu vào D:\\Remote PC và đóng tất cả phần mềm trước khi tắt hẳn.', async () => {
+    addLog('user','🛡️ Lệnh tắt máy an toàn (Tự động lưu vào D:\\Remote PC)');
+    showToast('⏳ Đang lưu dữ liệu và lần lượt đóng các phần mềm...', 6000);
+    try {
+      const res = await fetch(api('/api/power'), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'shutdown'})
+      });
+      const data = await res.json();
+      addLog('result', data.msg || '⚪ Đang lưu và tắt máy...');
+      showToast('✅ ' + (data.msg || 'Đang tắt máy...'), 5000);
+      setTimeout(() => setPC(false), 5000);
+    } catch(e) {
+      addLog('result', 'Lỗi khi gửi lệnh tắt máy');
+    }
+  });
+}
+
+function doRestart() {
+  if (!pcOn) { addLog('system','ℹ️ Máy đang tắt!'); return; }
+  confirm_sheet('🔄 Khởi động lại?','Máy tính sẽ reboot sau 5 giây', async () => {
+    addLog('user','🔄 Khởi động lại');
+    try {
+      const res = await fetch(api('/api/power'), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'restart'})
+      });
+      const data = await res.json();
+      addLog('result', data.msg || '⏳ Đang reboot…');
+      setPC(false);
+    } catch(e) {
+      addLog('result', 'Lỗi khi gửi lệnh');
+    }
+  });
+}
+
+// ── DIRECTION TOGGLE ────────────────────────────────────
+function setDir(d) {
+  document.getElementById('sec-send').classList.toggle('hidden', d !== 'send');
+  document.getElementById('sec-recv').classList.toggle('hidden', d !== 'recv');
+  document.getElementById('dirSendBtn').classList.toggle('on', d === 'send');
+  document.getElementById('dirRecvBtn').classList.toggle('on', d === 'recv');
+  if (d === 'recv') initRealFS();
+}
+
+// ── REAL PHONE TO PC UPLOAD ─────────────────────────────
+async function uploadSelectedFiles(input) {
+  if (!input.files || input.files.length === 0) return;
+  const history = document.getElementById('sendHistory');
+  if (history.querySelector('.text-center')) history.innerHTML = '';
+  
+  for (let file of input.files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const item = document.createElement('div');
+    item.className = 'card flex items-center gap-3 p-3';
+    item.innerHTML = `
+      <span class="text-2xl">📦</span>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium text-sm truncate">${file.name}</p>
+        <p class="text-xs text-[var(--muted-foreground)]">${(file.size/(1024*1024)).toFixed(1)} MB • Đang tải lên PC...</p>
+      </div>
+      <span class="text-xs font-bold text-[var(--primary)]">⏳</span>
+    `;
+    history.prepend(item);
+    
+    try {
+      const res = await fetch(api('/api/files/upload'), {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        item.querySelector('span:last-child').innerHTML = '✅';
+        item.querySelector('p:last-child').textContent = `${data.size} MB • Đã lưu vào D:\\Remote PC`;
+        addLog('user', `Đã chuyển file: ${file.name} vào Desktop PC`);
+      } else {
+        item.querySelector('span:last-child').innerHTML = '❌';
+        item.querySelector('p:last-child').textContent = 'Lỗi truyền file';
+      }
+    } catch(e) {
+      item.querySelector('span:last-child').innerHTML = '❌';
+      item.querySelector('p:last-child').textContent = 'Lỗi kết nối';
+    }
+  }
+}
+
+// ── REAL FILE EXPLORER (PC TO PHONE) ───────────────────
+const svg_f = '<svg class="inline-block text-[#eab308]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>';
+const svg_d = '<svg class="inline-block text-[var(--muted-foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>';
+const svg_fi = '<svg class="inline-block text-[var(--muted-foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>';
+const svg_cd = '<svg class="inline-block text-[var(--muted-foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+const svg_cr = '<svg class="inline-block text-[var(--muted-foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+let fsData = [];
+let fsMap = {};
+
+async function initRealFS() {
+  const container = document.getElementById('fileExplorerTree');
+  if (!container) return;
+  container.innerHTML = '<div class="text-center text-xs text-[var(--muted-foreground)] py-4">Đang nạp danh sách ổ đĩa từ PC...</div>';
+  
+  try {
+    const res = await fetch(api('/api/files/list'));
+    if (res.ok) {
+      const data = await res.json();
+      fsData = data.items.map(d => ({
+        type: 'drive',
+        name: d.name,
+        path: d.path,
+        expanded: false,
+        children: []
+      }));
+      renderFS();
+    }
+  } catch(e) {
+    container.innerHTML = '<div class="text-center text-xs text-red-400 py-4">Không thể kết nối ổ cứng PC</div>';
+  }
+}
+
+async function loadFolder(node) {
+  try {
+    const res = await fetch(api('/api/files/list?path=' + encodeURIComponent(node.path)));
+    if (res.ok) {
+      const data = await res.json();
+      node.children = data.items.map(item => ({
+        type: item.type,
+        name: item.name,
+        path: item.path,
+        size: item.size || 0,
+        expanded: false,
+        children: item.type === 'folder' ? [] : undefined
+      }));
+      renderFS();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderFS() {
+  const container = document.getElementById('fileExplorerTree');
+  if (!container) return;
+  fsMap = {}; 
+  
+  function buildNode(node, indexStr, level) {
+    fsMap[indexStr] = node;
+    const isDrive = node.type === 'drive';
+    const isFile = node.type === 'file';
+    const indent = level * 16 + 12;
+    
+    if (isFile) {
+      return `
+        <div onclick="pickNode('${indexStr}')" class="flex items-center gap-3 py-2 cursor-pointer active:opacity-70 rounded-xl transition-colors hover:bg-[var(--card)]" style="padding-left: ${indent}px; padding-right: 12px;">
+          ${svg_fi}
+          <span class="text-sm text-[var(--muted-foreground)] flex-1 truncate">${node.name}</span>
+          <span class="text-[10px] text-[var(--muted-foreground)] opacity-60">${node.size}MB</span>
+        </div>
+      `;
+    }
+    
+    const icon = isDrive ? svg_d : svg_f;
+    const hasChildren = node.children !== undefined;
+    const chevron = hasChildren ? (node.expanded ? svg_cd : svg_cr) : '<span style="width:16px"></span>';
+    
+    const activeClass = (node.expanded && level === 0) ? 'neo-shadow-inset' : '';
+    const textClass = (node.expanded && level === 0) ? 'text-[var(--primary)] font-bold' : 'text-[var(--foreground)] font-medium';
+    
+    let html = `
+      <div onclick="toggleNode('${indexStr}')" class="flex items-center gap-3 py-2.5 cursor-pointer active:opacity-70 rounded-xl transition-colors ${activeClass}"
+           style="padding-left: ${indent}px; padding-right: 12px;">
+        ${icon}
+        <span class="text-sm ${textClass} flex-1 truncate">${node.name}</span>
+        <span class="ml-auto">${chevron}</span>
+      </div>
+    `;
+    
+    if (node.expanded && node.children) {
+      html += `<div class="flex flex-col gap-0.5 mt-0.5 mb-1">`;
+      if (node.children.length === 0) {
+        html += `<div class="text-xs text-[var(--muted-foreground)] italic py-1" style="padding-left:${indent+24}px">Thư mục trống hoặc đang tải...</div>`;
+      } else {
+        node.children.forEach((child, i) => {
+          html += buildNode(child, `${indexStr}-${i}`, level + 1);
+        });
+      }
+      html += `</div>`;
+    }
+    return html;
+  }
+  
+  let html = '';
+  if (fsData.length === 0) {
+    html = '<div class="text-center text-xs text-[var(--muted-foreground)] py-4">Chưa có ổ đĩa nào</div>';
+  } else {
+    fsData.forEach((drive, i) => {
+      html += buildNode(drive, `${i}`, 0);
+    });
+  }
+  container.innerHTML = html;
+}
+
+window.toggleNode = async function(indexStr) {
+  const node = fsMap[indexStr];
+  if (!node) return;
+  if (node.children !== undefined) {
+    node.expanded = !node.expanded;
+    if (node.expanded && node.children.length === 0) {
+      renderFS();
+      await loadFolder(node);
+    } else {
+      renderFS();
+    }
+  }
+}
+
+let aiResults = [];
+
+window.pickNode = function(indexStr) {
+  const node = fsMap[indexStr];
+  if (!node) return;
+  showDownloadSheet(node.name, node.path, node.size);
+};
+
+window.pickAiResult = function(idx) {
+  const f = aiResults[idx];
+  if (!f) return;
+  showDownloadSheet(f.name, f.path, f.size);
+};
+
+
+// ── TOAST NOTIFICATION ─────────────────────────────────
+function showToast(msg, duration = 4000) {
+  let toast = document.getElementById('toastNotification');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toastNotification';
+    toast.style.cssText = 'position:fixed;top:16px;left:16px;right:16px;z-index:9999;padding:14px 18px;border-radius:18px;background:linear-gradient(135deg,#1e1f36,#141525);border:1px solid rgba(157,123,255,0.4);box-shadow:0 12px 30px rgba(0,0,0,0.8),0 0 15px rgba(157,123,255,0.3);color:#fff;display:flex;align-items:center;gap:12px;transition:all .3s cubic-bezier(0.2,0.8,0.2,1);transform:translateY(-80px);opacity:0;pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span style="font-size:22px">🔔</span><div style="flex:1;font-size:13px;font-weight:600;line-height:1.4">${msg}</div>`;
+  toast.style.transform = 'translateY(0)';
+  toast.style.opacity = '1';
+  
+  setTimeout(() => {
+    toast.style.transform = 'translateY(-80px)';
+    toast.style.opacity = '0';
+  }, duration);
+}
+
+let currentPreviewBlobUrl = null;
+
+function closeImagePreview() {
+  document.getElementById('imagePreviewOverlay').classList.remove('show');
+  if (currentPreviewBlobUrl) {
+    URL.revokeObjectURL(currentPreviewBlobUrl);
+    currentPreviewBlobUrl = null;
+  }
+}
+
+function showImageSaveModal(name, blob) {
+  if (currentPreviewBlobUrl) URL.revokeObjectURL(currentPreviewBlobUrl);
+  currentPreviewBlobUrl = URL.createObjectURL(blob);
+  
+  document.getElementById('imgPreviewTitle').textContent = `🖼️ ${name}`;
+  const imgTag = document.getElementById('imgPreviewTag');
+  imgTag.src = currentPreviewBlobUrl;
+  
+  document.getElementById('btnSaveToFiles').onclick = () => {
+    downloadBlob(currentPreviewBlobUrl, name);
+    showToast(`✅ Đã lưu ảnh vào Tệp (Downloads)!`, 4000);
+  };
+  
+  document.getElementById('imagePreviewOverlay').classList.add('show');
+}
+
+function downloadBlob(blobUrl, filename) {
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    if (a.parentNode) document.body.removeChild(a);
+  }, 4000);
+}
+
+async function startDownloadFile(name, path, sizeMB, isImage) {
+  showToast(`⏳ Đang tải <b>${name}</b> (${sizeMB} MB) từ máy tính...`, 4000);
+  addLog('user', `Tải về điện thoại: ${name} (${sizeMB} MB)`);
+
+  try {
+    const downloadUrl = api('/api/files/download?path=' + encodeURIComponent(path));
+    const res = await fetch(downloadUrl);
+    if (!res.ok) throw new Error("Không thể tải file từ máy tính");
+
+    const rawBlob = await res.blob();
+    
+    // Chuẩn hóa MIME type
+    let mimeType = rawBlob.type;
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const mimeMap = {
+      'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+      'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic',
+      'pdf': 'application/pdf', 'txt': 'text/plain', 'dwg': 'application/octet-stream',
+      'skp': 'application/octet-stream',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'zip': 'application/zip'
+    };
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      if (mimeMap[ext]) mimeType = mimeMap[ext];
+    }
+
+    const cleanBlob = new Blob([rawBlob], { type: mimeType });
+    const file = new File([cleanBlob], name, { type: mimeType });
+
+    // 1. Dùng Web Share API nếu trình duyệt hỗ trợ (Phương thức chuẩn nhất trên iPhone iOS & Android)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: name
+        });
+        const promptMsg = isImage
+          ? `✅ Đã mở bảng chọn: Bấm <b>"Lưu hình ảnh"</b> để lưu vào Ảnh!`
+          : `✅ Đã mở bảng chọn: Bấm <b>"Lưu vào Tệp"</b> để lưu vào máy!`;
+        showToast(promptMsg, 6000);
+        addLog('result', `✅ Đã chuyển ${name} vào trình lưu file của điện thoại`);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // Người dùng chủ động bấm Hủy trên bảng Share Sheet
           return;
         }
-        count--;
-        countEl.textContent = count;
-        if (count <= 0) {
-          clearInterval(autoRedirectTimer);
-          openRemotePC();
-        }
-      }, 1000);
+        // Nếu lỗi chia sẻ khác, tiếp tục xuống phương thức fallback bên dưới
+      }
     }
 
-    async function triggerWake() {
-      let token = getGitHubToken();
-      if (!token) {
-        token = prompt('Vui lòng nhập GitHub Personal Access Token để kích hoạt Bật máy:');
-        if (!token || !token.trim()) return;
-        localStorage.setItem('gh_token', token.trim());
-      }
+    // 2. Nếu là file ảnh và không mở được bảng Share Sheet (ví dụ Safari PWA chặn share):
+    // Mở popup ảnh để người dùng chạm giữ (long-press) chọn "Lưu hình ảnh" hoặc bấm "Lưu vào Tệp"
+    if (isImage) {
+      showImageSaveModal(name, cleanBlob);
+      showToast(`💡 Chạm giữ vào ảnh ➔ Chọn <b>"Lưu hình ảnh"</b>!`, 6000);
+      addLog('result', `✅ Đã mở ảnh ${name} để lưu vào Cuộn Camera`);
+      return;
+    }
 
-      if (!confirm('⚡ Bạn có chắc muốn gửi tín hiệu Bật máy tính từ xa không?')) return;
-      
-      showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', '⏳', 6000);
-      const btnWake = document.getElementById('btnWake');
-      btnWake.disabled = true;
-      btnWake.innerHTML = '<span>📡 Đang kích nguồn...</span>';
+    // 3. Tải qua Blob URL (Dành cho file PDF, CAD, Office, v.v. - Lưu vào Tệp / Downloads)
+    // Tuyệt đối KHÔNG điều hướng làm mất app
+    const blobUrl = URL.createObjectURL(cleanBlob);
+    downloadBlob(blobUrl, name);
+    setTimeout(() => { URL.revokeObjectURL(blobUrl); }, 5000);
 
+    showToast(`✅ Đã lưu file <b>${name}</b> vào ứng dụng Tệp (Downloads)!`, 5000);
+    addLog('result', `✅ Đã lưu vào Tệp: ${name}`);
+
+  } catch (err) {
+    showToast(`❌ Lỗi khi tải file: ${err.message}`, 4000);
+    addLog('error', `Lỗi tải file ${name}: ${err.message}`);
+  }
+}
+
+function showDownloadSheet(name, path, sizeMB) {
+  const isImage = /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(name);
+  const isLarge = sizeMB > 50;
+  
+  if (!isLarge) {
+    const title = isImage ? `🖼️ Lưu Ảnh Vào Thiết Bị` : `📁 Lưu File Vào Thiết Bị`;
+    const desc = isImage
+      ? `Tên ảnh: ${name}\nDung lượng: ${sizeMB} MB (≤ 50MB)\nẢnh sẽ được lưu vào ứng dụng Ảnh (Cuộn Camera) của điện thoại.`
+      : `Tên file: ${name}\nDung lượng: ${sizeMB} MB (≤ 50MB)\nFile sẽ được lưu vào ứng dụng Tệp (Downloads) của điện thoại.`;
+    
+    confirm_sheet(title, desc, () => {
+      startDownloadFile(name, path, sizeMB, isImage);
+    });
+    
+    const confirmBtn = document.getElementById('sheetConfirm');
+    if (confirmBtn) {
+      confirmBtn.textContent = isImage ? '📥 Lưu Vào Ảnh' : '📥 Lưu Vào Tệp';
+    }
+  } else {
+    // > 50MB: Tự động gửi lên Google Drive vào thư mục Remote PC
+    const title = `☁️ Gửi lên Google Drive: ${name}`;
+    const desc = `Dung lượng: ${sizeMB} MB (> 50MB)\nMáy tính sẽ tự động đưa file vào thư mục "Remote PC" trên Google Drive.`;
+    
+    confirm_sheet(title, desc, async () => {
+      showToast(`⏳ Đang chuyển <b>${name}</b> vào thư mục "Remote PC" trên Google Drive...`, 5000);
+      addLog('user', `Gửi lên Google Drive: ${name} (${sizeMB} MB)`);
       try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ event_type: 'wake' })
+        const res = await fetch(api('/api/files/drive-upload?path=' + encodeURIComponent(path)), {
+          method: 'POST'
         });
-
-        if (res.status === 204) {
-          showToast('🟢 Đã bắn tín hiệu Magic Packet! Máy đang khởi động (đợi ~35s)...', '✅', 10000);
-          
-          let waitSeconds = 40;
-          btnWake.innerHTML = `<span>⏳ Đợi máy mở (${waitSeconds}s)...</span>`;
-          
-          const pollTimer = setInterval(async () => {
-            waitSeconds -= 3;
-            if (waitSeconds > 0) {
-              btnWake.innerHTML = `<span>⏳ Đợi máy mở (${waitSeconds}s)...</span>`;
-              try {
-                const r = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
-                const d = await r.json();
-                if (d.url) {
-                  const rTest = await fetch(`${d.url}/api/status`);
-                  if (rTest.ok) {
-                    clearInterval(pollTimer);
-                    showToast('🎉 Máy tính đã khởi động thành công!', '🟢');
-                    checkConnection();
-                    return;
-                  }
-                }
-              } catch(e) {}
-            } else {
-              clearInterval(pollTimer);
-              btnWake.disabled = false;
-              btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
-              checkConnection();
-            }
-          }, 3000);
-
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`☁️ Đã gửi xong <b>${name}</b> vào Google Drive thư mục "Remote PC"!`, 6000);
+          addLog('result', `✅ Đã đưa ${name} lên Google Drive (Remote PC)`);
         } else {
-          showToast('❌ Không gửi được lệnh kích nguồn (Mã lỗi ' + res.status + ')', '❌');
-          btnWake.disabled = false;
-          btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
+          showToast(`❌ Lỗi khi gửi file lên Drive`);
         }
       } catch(e) {
-        showToast('❌ Lỗi kết nối tới GitHub Actions!', '❌');
-        btnWake.disabled = false;
-        btnWake.innerHTML = '<span>⚡ BẬT MÁY TỪ XA</span>';
+        showToast(`❌ Lỗi kết nối tới server`);
+      }
+    });
+    
+    const confirmBtn = document.getElementById('sheetConfirm');
+    if (confirmBtn) confirmBtn.textContent = '☁️ Đẩy Lên Drive';
+  }
+}
+
+
+// ── REAL AI FILE SEARCH ─────────────────────────────────
+async function analyzeFile() {
+  const input = document.getElementById('aiFileCmd');
+  const query = input.value.trim();
+  if (!query) {
+    alert("Vui lòng gõ tên file hoặc từ khóa cần tìm!");
+    return;
+  }
+  const tree = document.getElementById('fileExplorerTree');
+  tree.innerHTML = `<div class="p-4 text-center text-xs text-[var(--primary)] font-medium">🤖 AI đang quét tìm file "${query}" trên máy tính...</div>`;
+  
+  try {
+    const res = await fetch(api('/api/files/search?query=' + encodeURIComponent(query)));
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) {
+        tree.innerHTML = `<div class="p-4 text-center text-xs text-[var(--muted-foreground)]">Không tìm thấy file nào khớp với "${query}".</div>`;
+        return;
+      }
+      let html = `<div class="p-2 text-xs font-bold text-[var(--primary)]">Kết quả tìm kiếm cho: "${query}"</div>`;
+      aiResults = data.results;
+      data.results.forEach((f, idx) => {
+        html += `
+          <div onclick="pickAiResult(${idx})" class="flex items-center gap-3 py-2 px-3 cursor-pointer active:opacity-70 rounded-xl transition-colors hover:bg-[var(--card)]">
+            ${svg_fi}
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-[var(--foreground)] truncate">${f.name}</p>
+              <p class="text-[10px] text-[var(--muted-foreground)] truncate">${f.path}</p>
+            </div>
+            <span class="text-xs text-[var(--muted-foreground)] font-bold shrink-0">${f.size} MB</span>
+          </div>
+        `;
+      });
+      tree.innerHTML = html;
+    }
+  } catch(e) {
+    tree.innerHTML = `<div class="p-4 text-center text-xs text-red-400">Lỗi khi tìm kiếm file.</div>`;
+  }
+}
+
+// ── PERSISTENT LOGS (LOCALSTORAGE) ──────────────────────
+function addLog(type, msg) {
+  const now = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  logs.unshift({type, msg, time: now});
+  if (logs.length > 50) logs.pop(); // keep last 50
+  
+  try {
+    localStorage.setItem('pc_logs', JSON.stringify(logs));
+  } catch(e) {}
+  
+  renderFullLog();
+  updateHomeLogPreview();
+}
+
+function renderFullLog() {
+  const el = document.getElementById('fullLog');
+  if (!el) return;
+  if (!logs.length) {
+    el.innerHTML = '<p class="text-xs text-[var(--muted-foreground)] text-center py-8">Chưa có hoạt động nào</p>';
+    return;
+  }
+  el.innerHTML = '';
+  logs.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'log-item mb-2';
+    div.innerHTML = `<div class="flex justify-between items-start gap-2"><span>${l.msg}</span><span class="text-xs text-[var(--muted-foreground)] shrink-0">${l.time}</span></div>`;
+    el.appendChild(div);
+  });
+}
+
+function clearLog() {
+  logs = [];
+  try { localStorage.removeItem('pc_logs'); } catch(e) {}
+  const el = document.getElementById('homeLog');
+  if (el) el.innerHTML = '<p class="text-xs text-[var(--muted-foreground)] text-center py-3">Chưa có hoạt động</p>';
+  renderFullLog();
+  showToast('🗑️ Đã xoá toàn bộ lịch sử!');
+}
+
+// ── SETTINGS INTERACTIONS ──────────────────────────────
+
+function configGeminiKey() {
+  const currentKey = localStorage.getItem('gemini_api_key') || '';
+  const key = prompt('Nhập Google Gemini API Key để kích hoạt AI Agent xử lý lệnh thông minh (Lấy hoàn toàn miễn phí tại aistudio.google.com):', currentKey);
+  if (key === null) return;
+  const clean = key.trim();
+  if (clean) {
+    localStorage.setItem('gemini_api_key', clean);
+    fetch(api('/api/config'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({gemini_api_key: clean})
+    }).catch(console.error);
+    updateGeminiStatus();
+    showToast('✨ Đã kích hoạt Trợ lý AI Agent (Gemini) thành công!', 4000);
+  } else {
+    localStorage.removeItem('gemini_api_key');
+    updateGeminiStatus();
+    showToast('Đã chuyển về chế độ bộ lệnh mặc định.');
+  }
+}
+
+function updateGeminiStatus() {
+  const el = document.getElementById('settingGeminiStatus');
+  if (!el) return;
+  const k = localStorage.getItem('gemini_api_key') || '';
+  if (k) {
+    el.textContent = `Đã kích hoạt AI Agent (${k.substring(0, 6)}...)`;
+    el.style.color = '#a855f7';
+  } else {
+    el.textContent = 'Chưa cài đặt (Dùng bộ lệnh mặc định)';
+    el.style.color = '';
+  }
+}
+
+function configGitHubWOL() {
+  const currentRepo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
+  const currentToken = localStorage.getItem('gh_token') || '';
+  
+  const repo = prompt('Nhập tên GitHub Repo của bạn (VD: username/wake-pc):', currentRepo);
+  if (repo === null) return;
+  const token = prompt('Nhập GitHub Personal Access Token (ghp_...):', currentToken);
+  if (token === null) return;
+  
+  if (repo.trim() && token.trim()) {
+    localStorage.setItem('gh_repo', repo.trim());
+    localStorage.setItem('gh_token', token.trim());
+    document.getElementById('settingGHStatus').textContent = `${repo.trim()} (Đã lưu)`;
+    showToast('✅ Đã lưu cấu hình Bật máy từ xa!');
+  }
+}
+
+function changePCName() {
+  const current = localStorage.getItem('pc_name') || 'PC của tôi';
+  const name = prompt('Nhập tên hiển thị cho máy tính:', current);
+  if (name && name.trim()) {
+    const clean = name.trim();
+    localStorage.setItem('pc_name', clean);
+    document.querySelectorAll('h1').forEach(h => {
+      if (h.textContent.includes('PC') || h.textContent === current) h.textContent = clean;
+    });
+    const s = document.getElementById('settingPCName');
+    if (s) s.textContent = clean;
+    showToast(`✏️ Đã đổi tên thành: ${clean}`);
+  }
+}
+
+function toggleThreshold() {
+  let val = parseInt(localStorage.getItem('pc_threshold') || '50');
+  if (val === 50) val = 100;
+  else if (val === 100) val = 20;
+  else val = 50;
+  
+  localStorage.setItem('pc_threshold', val.toString());
+  const badge = document.getElementById('settingThreshold');
+  if (badge) badge.textContent = `${val} MB`;
+  showToast(`⚡ Ngưỡng gửi trực tiếp đã đổi sang: ${val} MB`);
+}
+
+async function loadSettings() {
+  // Đồng bộ cấu hình từ server (Gemini API key, GitHub Token & Tên máy tính)
+  try {
+    const res = await safeFetch('/api/config', {}, 3000);
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg.github_token && !localStorage.getItem('gh_token')) {
+        localStorage.setItem('gh_token', cfg.github_token);
+      }
+      if (cfg.github_repo && !localStorage.getItem('gh_repo')) {
+        localStorage.setItem('gh_repo', cfg.github_repo);
+      }
+      if (cfg.gemini_api_key && !localStorage.getItem('gemini_api_key')) {
+        localStorage.setItem('gemini_api_key', cfg.gemini_api_key);
+      }
+      if (cfg.pc_name && !localStorage.getItem('pc_name')) {
+        localStorage.setItem('pc_name', cfg.pc_name);
       }
     }
+  } catch(e) {}
 
-    window.onload = function() {
-      checkConnection();
+  const savedName = localStorage.getItem('pc_name') || 'PC của tôi';
+  const s = document.getElementById('settingPCName');
+  if (s) s.textContent = savedName;
+  const h1 = document.querySelector('#page-home h1');
+  if (h1) h1.textContent = savedName;
+
+  const savedRepo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
+  if (savedRepo) {
+    const el = document.getElementById('settingGHStatus');
+    if (el) el.textContent = `${savedRepo} (Sẵn sàng)`;
+  }
+  const savedTh = localStorage.getItem('pc_threshold');
+  if (savedTh) {
+    const badge = document.getElementById('settingThreshold');
+    if (badge) badge.textContent = `${savedTh} MB`;
+  }
+  updateGeminiStatus();
+}
+
+function confirm_sheet(title, desc, cb) {
+  sheetCallback = cb;
+  document.getElementById('sheetTitle').textContent = title;
+  document.getElementById('sheetDesc').textContent = desc;
+  document.getElementById('sheetConfirm').onclick = () => { closeSheet(); cb(); };
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSheet() { document.getElementById('overlay').classList.remove('show'); }
+
+
+// ── COMMAND EXECUTION ───────────────────────────────────
+async function sendCommand(text) {
+  if (!text || !text.trim()) return;
+  const cmd = text.trim();
+  addLog('user', `🗣️ ${cmd}`);
+  showToast(`⏳ Đang thực thi: "${cmd}"...`, 3000);
+  
+  // Append to chat list
+  const chatList = document.getElementById('cmdChatList');
+  if (chatList) {
+    if (chatList.querySelector('.text-center')) chatList.innerHTML = '';
+    const userMsg = document.createElement('div');
+    userMsg.className = 'text-xs p-2.5 rounded-xl self-end max-w-[85%]';
+    userMsg.style.cssText = 'background:var(--primary-dark);color:#fff;align-self:flex-end;';
+    userMsg.innerHTML = `<b>Bạn:</b> ${cmd}`;
+    chatList.appendChild(userMsg);
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+  
+  try {
+    const geminiKey = localStorage.getItem('gemini_api_key') || '';
+    const res = await fetch(api('/api/command'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({command: cmd, gemini_key: geminiKey})
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const agentLabel = data.agent ? `🤖 ${data.agent}` : '🤖 PC';
+      showToast(`${agentLabel}: ${data.reply}`, 5000);
+      addLog('result', `${agentLabel}: ${data.reply}`);
+      
+      if (chatList) {
+        const pcMsg = document.createElement('div');
+        pcMsg.className = 'text-xs p-2.5 rounded-xl self-start max-w-[85%] whitespace-pre-wrap';
+        pcMsg.style.cssText = 'background:rgba(255,255,255,0.05);color:var(--foreground);border:1px solid var(--border);align-self:flex-start;';
+        pcMsg.innerHTML = `<b>${agentLabel}:</b> ${data.reply}`;
+        chatList.appendChild(pcMsg);
+        chatList.scrollTop = chatList.scrollHeight;
+      }
+    } else {
+      showToast('❌ Máy tính không phản hồi lệnh');
     }
-  </script>
+  } catch(e) {
+    showToast('❌ Mất kết nối tới server');
+  }
+}
+
+function sendText() {
+  const input = document.getElementById('cmdText');
+  const text = input.value.trim();
+  if (!text) {
+    alert('Vui lòng nhập lệnh trước khi gửi!');
+    return;
+  }
+  sendCommand(text);
+  input.value = '';
+}
+
+function quickText(cmd) {
+  sendCommand(cmd);
+}
+
+// ── VOICE SPEECH RECOGNITION ────────────────────────────
+let recognition = null;
+let isListening = false;
+
+async function toggleMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  const micBtn = document.getElementById('micBtn');
+  const micHint = document.getElementById('micHint');
+  const transcriptEl = document.getElementById('transcript');
+  const wave = document.getElementById('waveViz');
+  const cmdInput = document.getElementById('cmdText');
+
+  if (!SpeechRecognition) {
+    if (cmdInput) {
+      cmdInput.focus();
+      cmdInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    showToast('💡 Bấm nút Micro 🎙️ trên bàn phím iPhone để nói tiếng Việt cực chuẩn!', 6000);
+    if (micHint) micHint.textContent = 'Dùng phím Micro 🎙️ trên bàn phím';
+    return;
+  }
+
+  if (!isListening) {
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Dừng tracks ngay để nhường quyền cho SpeechRecognition
+        stream.getTracks().forEach(t => t.stop());
+      }
+    } catch(e) {
+      if (cmdInput) cmdInput.focus();
+      showToast('💡 Hãy dùng nút Micro 🎙️ trên bàn phím iPhone để nói nhé!', 5000);
+      return;
+    }
+
+    try {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'vi-VN';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = function() {
+        isListening = true;
+        if (micBtn) micBtn.classList.add('listening');
+        if (micHint) micHint.textContent = 'Đang lắng nghe... Hãy nói lệnh!';
+        if (wave) wave.classList.remove('silent');
+      };
+
+      recognition.onresult = function(event) {
+        let current = event.resultIndex;
+        let text = event.results[current][0].transcript;
+        if (transcriptEl) transcriptEl.textContent = `"${text}"`;
+        if (cmdInput) cmdInput.value = text;
+        if (event.results[current].isFinal) {
+          sendCommand(text);
+          stopMic();
+        }
+      };
+
+      recognition.onerror = function(event) {
+        console.warn('SpeechRecognition error:', event.error);
+        stopMic();
+        if (event.error === 'not-allowed') {
+          showToast('💡 Hãy chạm ô nhập và bấm nút Micro 🎙️ trên bàn phím nhé!', 5000);
+        } else if (event.error === 'no-speech') {
+          if (micHint) micHint.textContent = 'Chưa nghe rõ, hãy bấm thử lại';
+        } else {
+          if (micHint) micHint.textContent = 'Nhấn để nói hoặc dùng mic bàn phím';
+        }
+      };
+
+      recognition.onend = function() {
+        stopMic();
+      };
+
+      recognition.start();
+    } catch(e) {
+      stopMic();
+      if (cmdInput) cmdInput.focus();
+      showToast('💡 Chạm ô nhập và bấm nút Micro 🎙️ trên bàn phím iPhone nhé!', 5000);
+    }
+  } else {
+    stopMic();
+  }
+}
+
+function stopMic() {
+  isListening = false;
+  const micBtn = document.getElementById('micBtn');
+  const micHint = document.getElementById('micHint');
+  const wave = document.getElementById('waveViz');
+  if (micBtn) micBtn.classList.remove('listening');
+  if (micHint) micHint.textContent = 'Nhấn để nói bằng tiếng Việt';
+  if (wave) wave.classList.add('silent');
+  if (recognition) {
+    try { recognition.stop(); } catch(e) {}
+  }
+}
+
+// ── PERSISTENT LOGS (LOCALSTORAGE) ──────────────────────
+function loadSavedLogs() {
+  try {
+    const saved = localStorage.getItem('pc_logs');
+    if (saved) {
+      logs = JSON.parse(saved);
+      renderFullLog();
+      updateHomeLogPreview();
+    }
+  } catch(e) {}
+}
+
+function updateHomeLogPreview() {
+  const homeLog = document.getElementById('homeLog');
+  if (!homeLog) return;
+  homeLog.innerHTML = '';
+  if (!logs.length) {
+    homeLog.innerHTML = '<p class="text-xs text-[var(--muted-foreground)] text-center py-3">Chưa có hoạt động</p>';
+    return;
+  }
+  logs.slice(0, 3).forEach(l => {
+    const el = document.createElement('div');
+    el.className = 'log-item border-l-2 pl-3 py-1 border-[var(--primary)]';
+    el.innerHTML = `<p class="text-xs">${l.msg}</p><p class="text-xs text-[var(--muted-foreground)] mt-0.5">${l.time}</p>`;
+    homeLog.appendChild(el);
+  });
+}
+
+// ── INIT ON LOAD ────────────────────────────────────────
+window.onload = async function() {
+  // Pre-seed defaults
+  if (!localStorage.getItem('gh_repo')) localStorage.setItem('gh_repo', DEFAULT_GH_REPO);
+
+  loadSavedLogs();
+  loadSettings();
+
+  // If on GitHub Pages, synchronize the active Cloudflare tunnel
+  if (IS_GITHUB_PAGES) {
+    await syncBackendUrl();
+  }
+
+  // Check PC online status
+  await checkStatus();
+  if (pcOn) {
+    initRealFS();
+  }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('PWA ServiceWorker registered');
+    }).catch(console.error);
+  }
+
+  // Auto-refresh status periodically every 15s
+  setInterval(async () => {
+    if (IS_GITHUB_PAGES && !pcOn) {
+      await syncBackendUrl();
+    }
+    await checkStatus();
+  }, 15000);
+};
+</script>
 </body>
 </html>
