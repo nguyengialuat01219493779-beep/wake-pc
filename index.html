@@ -227,10 +227,20 @@
       }
 
       try {
-        // 1. Lấy thông tin link mới nhất từ active_link.json trên GitHub (cache buster)
-        const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
-        if (!res.ok) throw new Error('Chưa có active_link.json');
-        const data = await res.json();
+        // 1. Lay link truc tiep qua GitHub API (0s cache) hoac fallback raw
+        let data = null;
+        try {
+          const rApi = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/active_link.json`);
+          if (rApi.ok) {
+            const jMeta = await rApi.json();
+            data = JSON.parse(decodeURIComponent(escape(atob(jMeta.content))));
+          }
+        } catch(e) {}
+        if (!data) {
+          const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/active_link.json?t=${Date.now()}`);
+          if (!res.ok) throw new Error("Chua co active_link.json");
+          data = await res.json();
+        }
         
         targetUrl = data.url;
         document.getElementById('activeUrlText').textContent = data.url || 'Chưa có link';
