@@ -1,4 +1,4 @@
-const CACHE_NAME = 'remotepc-offline-v3';
+const CACHE_NAME = 'remotepc-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -29,11 +29,18 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
-  // Bỏ qua các API request (để CORS fetch trực tiếp)
-  if (url.includes('/api/') || url.includes('api.github.com') || url.includes('trycloudflare.com')) {
+  // Bỏ qua tất cả API và dữ liệu link động (luôn lấy trực tiếp từ mạng)
+  if (
+    url.includes('/api/') || 
+    url.includes('active_link.json') || 
+    url.includes('api.github.com') || 
+    url.includes('raw.githubusercontent.com') || 
+    url.includes('trycloudflare.com')
+  ) {
     return;
   }
 
+  // Đối với index.html và assets: Ưu tiên mạng trước, lỗi mới lấy từ cache
   e.respondWith(
     fetch(e.request)
       .then((response) => {
