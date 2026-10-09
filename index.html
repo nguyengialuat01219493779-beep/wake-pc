@@ -283,9 +283,10 @@
     </div>
 
     <!-- Check button -->
-    <button onclick="checkStatus()" class="mt-4 text-xs px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
+    <button onclick="checkStatus(true)" class="mt-4 text-xs px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
       ↻ Kiểm tra kết nối
     </button>
+    <p id="backendDisplay" class="text-[10px] text-[var(--muted-foreground)] mt-2 font-mono truncate max-w-[260px] text-center"></p>
   </div>
 
   <!-- Power buttons -->
@@ -688,8 +689,57 @@ async function safeFetch(endpoint, options = {}, timeoutMs = 6000) {
   }
 }
 
-async function syncBackendUrl() {
-  if (!IS_GITHUB_PAGES) return;
+function updateBackendDisplay(url) {
+  const el = document.getElementById('backendDisplay');
+  if (!el) return;
+  if (!IS_GITHUB_PAGES) {
+    el.textContent = 'Mạng nội bộ LAN';
+    return;
+  }
+  if (url) {
+    const clean = url.replace('https://', '').replace('.trycloudflare.com', '');
+    el.textContent = `Link: ${clean}.trycloudflare.com`;
+    el.title = url;
+  } else {
+    el.textContent = 'Đang tìm link...';
+  }
+}
+
+async function syncBackendUrl(force = false) {
+  if (!IS_GITHUB_PAGES) return false;
+  
+  // Chiến lược 1: Đọc trực tiếp file active_link.json cùng tên miền GitHub Pages (Cực nhanh, KHÔNG bị giới hạn Rate Limit)
+  try {
+    const res = await fetch(`active_link.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.url) {
+        const cleanUrl = data.url.replace(/\/+$/, '');
+        BACKEND_URL = cleanUrl;
+        localStorage.setItem('remote_backend_url', cleanUrl);
+        updateBackendDisplay(cleanUrl);
+        return true;
+      }
+    }
+  } catch (err) {}
+
+  // Chiến lược 2: Đọc file raw từ GitHub (Không bị giới hạn API)
+  try {
+    const repo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/active_link.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.url) {
+        const cleanUrl = data.url.replace(/\/+$/, '');
+        BACKEND_URL = cleanUrl;
+        localStorage.setItem('remote_backend_url', cleanUrl);
+        updateBackendDisplay(cleanUrl);
+        return true;
+      }
+    }
+  } catch (err) {}
+
+  // Chiến lược 3: GitHub Contents API
   try {
     const token = localStorage.getItem('gh_token');
     const repo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
@@ -706,16 +756,15 @@ async function syncBackendUrl() {
       const parsed = JSON.parse(rawContent);
       if (parsed.url) {
         const cleanUrl = parsed.url.replace(/\/+$/, '');
-        if (cleanUrl !== BACKEND_URL) {
-          BACKEND_URL = cleanUrl;
-          localStorage.setItem('remote_backend_url', cleanUrl);
-          console.log('✅ Synchronized active backend tunnel:', cleanUrl);
-        }
+        BACKEND_URL = cleanUrl;
+        localStorage.setItem('remote_backend_url', cleanUrl);
+        updateBackendDisplay(cleanUrl);
+        return true;
       }
     }
-  } catch (err) {
-    console.warn('⚠️ Lỗi đồng bộ link tunnel từ GitHub:', err);
-  }
+  } catch (err) {}
+
+  return false;
 }
 
 // ── STATE ──────────────────────────────────────────────
@@ -769,14 +818,33 @@ function updateCmdOnline() {
   dot.innerHTML = `<span class="w-2 h-2 rounded-full inline-block ${pcOn ? 'bg-[#4deeea]' : 'bg-[#ff6b8b]'}"></span> ${pcOn ? 'Online' : 'Offline'}`;
 }
 
-async function checkStatus() {
+async function checkStatus(forceSync = false) {
   addLog('system','🔍 Đang kiểm tra kết nối tới PC…');
   try {
-    if (IS_GITHUB_PAGES && !BACKEND_URL) {
-      await syncBackendUrl();
+    // 1. Luôn đồng bộ link nếu chưa có hoặc nếu người dùng bấm nút Kiểm tra kết nối
+    if (IS_GITHUB_PAGES && (!BACKEND_URL || forceSync)) {
+      await syncBackendUrl(forceSync);
     }
-    const res = await safeFetch('/api/status', {}, 5000);
-    if (res.ok) {
+    
+    let res = null;
+    try {
+      res = await safeFetch('/api/status', {}, 4000);
+    } catch(err) {}
+
+    // 2. Nếu không kết nối được hoặc link cũ bị chết (HTTP 502/530), lập tức ép quét link mới nhất và thử lại ngay
+    if (!res || !res.ok) {
+      if (IS_GITHUB_PAGES) {
+        const oldUrl = BACKEND_URL;
+        await syncBackendUrl(true);
+        if (BACKEND_URL && BACKEND_URL !== oldUrl) {
+          try {
+            res = await safeFetch('/api/status', {}, 5000);
+          } catch(err2) {}
+        }
+      }
+    }
+
+    if (res && res.ok) {
       const data = await res.json();
       setPC(true);
       document.getElementById('hUptime').textContent = data.uptime || '—';
@@ -785,34 +853,20 @@ async function checkStatus() {
       addLog('result', `🟢 Online — Uptime: ${data.uptime} | CPU: ${data.cpu}% | RAM: ${data.ram}%`);
       const ast = document.getElementById('assistantMsg');
       if (ast) ast.textContent = `Máy tính đang hoạt động bình thường (${data.uptime}). Sẵn sàng nhận lệnh!`;
+      updateBackendDisplay(BACKEND_URL);
       return true;
     } else {
       setPC(false);
       addLog('result','🔴 Không phản hồi');
+      document.getElementById('hPing').textContent = '—';
+      document.getElementById('hSSH').textContent = '—';
+      document.getElementById('hUptime').textContent = '—';
+      const ast = document.getElementById('assistantMsg');
+      if (ast) ast.innerHTML = 'Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> <b>Bật máy</b> để khởi động từ xa.';
+      updateBackendDisplay(BACKEND_URL);
       return false;
     }
   } catch(e) {
-    // Nếu lỗi kết nối trên GitHub Pages, thử làm mới link tunnel từ GitHub và thử lại 1 lần
-    if (IS_GITHUB_PAGES) {
-      try {
-        const oldUrl = BACKEND_URL;
-        await syncBackendUrl();
-        if (BACKEND_URL && BACKEND_URL !== oldUrl) {
-          const res = await safeFetch('/api/status', {}, 5000);
-          if (res.ok) {
-            const data = await res.json();
-            setPC(true);
-            document.getElementById('hUptime').textContent = data.uptime || '—';
-            document.getElementById('hPing').textContent = 'Cloudflare';
-            document.getElementById('hSSH').textContent = `${data.cpu}% CPU`;
-            addLog('result', `🟢 Online — Uptime: ${data.uptime} | CPU: ${data.cpu}% | RAM: ${data.ram}%`);
-            const ast = document.getElementById('assistantMsg');
-            if (ast) ast.textContent = `Máy tính đang hoạt động bình thường (${data.uptime}). Sẵn sàng nhận lệnh!`;
-            return true;
-          }
-        }
-      } catch(retryErr) {}
-    }
     setPC(false);
     addLog('result','🔴 Offline');
     document.getElementById('hPing').textContent = '—';
@@ -820,6 +874,7 @@ async function checkStatus() {
     document.getElementById('hUptime').textContent = '—';
     const ast = document.getElementById('assistantMsg');
     if (ast) ast.innerHTML = 'Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> <b>Bật máy</b> để khởi động từ xa.';
+    updateBackendDisplay(BACKEND_URL);
     return false;
   }
 }
@@ -1724,7 +1779,7 @@ window.onload = async function() {
 
   // If on GitHub Pages, synchronize the active Cloudflare tunnel
   if (IS_GITHUB_PAGES) {
-    await syncBackendUrl();
+    await syncBackendUrl(true);
   }
 
   // Check PC online status
