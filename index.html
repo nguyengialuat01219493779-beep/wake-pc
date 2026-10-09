@@ -4,229 +4,338 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Remote PC"/>
   <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="theme-color" content="#17182b"/>
+  <meta name="theme-color" content="#FFF9F0"/>
   <title>Remote PC</title>
   <link rel="manifest" href="manifest.json"/>
 
+  <!-- Google Fonts: Space Grotesk & Inter (CITRUS / GRID Design System) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Space Grotesk"', 'sans-serif'],
+            body: ['"Inter"', 'sans-serif'],
+          },
+          colors: {
+            citrus: '#FF7A00',
+            cream: '#FFE7D1',
+            navy: '#0F2747',
+            ivory: '#FFF9F0',
+          }
+        }
+      }
+    }
+  </script>
   <style>
     :root {
-      --bg-color: #17182b;
-      --card-bg: linear-gradient(145deg, #1e1f36, #141525);
-      --card: #1c1d33;
-      --shadow-light: rgba(255, 255, 255, 0.05);
-      --shadow-dark: rgba(0, 0, 0, 0.6);
-      --shadow-glow: rgba(135, 100, 255, 0.3);
-      --primary: #9d7bff;
-      --primary-dark: #6e44ff;
-      --primary-gradient: linear-gradient(135deg, #ff8c70, #ffb56b);
-      --foreground: #ffffff;
-      --muted-foreground: #7a7a93;
-      --border: rgba(255,255,255,0.02);
-      --placeholder: #5a5a73;
+      /* CITRUS / GRID DESIGN SYSTEM TOKENS */
+      --citrus: #FF7A00;
+      --citrus-hover: #E66E00;
+      --citrus-light: #FFF0E0;
+      --cream: #FFE7D1;
+      --navy: #0F2747;
+      --navy-muted: #596A80;
+      --navy-light: #F4F7FA;
+      --ivory: #FFF9F0;
+      --card-bg: #FFFFFF;
+      --border: #EFE4D6;
+      --border-dark: #DCCEC0;
+      --border-input: #E4D8C9;
+      --success: #00A86B;
+      --danger: #E63946;
+
+      --primary: #FF7A00;
+      --primary-dark: #E66E00;
+      --primary-gradient: linear-gradient(135deg, #FF7A00, #FFA149);
+      --foreground: #0F2747;
+      --muted-foreground: #596A80;
+      --placeholder: #8E9CAE;
+
+      --font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     body{
       margin:0;overflow:hidden;height:100vh;display:flex;flex-direction:column;
-      background-color: var(--bg-color);
-      background-image: radial-gradient(circle at 10% 10%, #232545 0%, #111220 100%);
-      color: var(--foreground);
-      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--ivory);
+      color: var(--navy);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
     }
+
+    .font-display { font-family: var(--font-display); }
+    .font-body { font-family: var(--font-body); }
 
     /* Pages */
-    .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:240px}
+    .page{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:120px}
     .page.hidden{display:none}
-    .page-enter{animation:fadeUp .3s cubic-bezier(0.2, 0.8, 0.2, 1)}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .page-enter{animation:fadeUp .25s cubic-bezier(0.2, 0.8, 0.2, 1)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-    /* Soft Neumorphic Shadows */
-    .neo-shadow {
+    /* Citrus / Grid Cards */
+    .card{
+      border-radius:22px;padding:20px;
       background: var(--card-bg);
-      border: 1px solid var(--border);
-      box-shadow: -5px -5px 14px var(--shadow-light), 8px 8px 20px var(--shadow-dark);
-    }
-    .neo-shadow-inset {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 6px 6px 15px var(--shadow-dark);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 4px 18px rgba(15, 39, 71, 0.04), 0 1px 3px rgba(15, 39, 71, 0.02);
     }
 
-    /* Bottom nav */
+    /* Floating Bottom Nav (UI Elements from Citrus/Grid) */
     .bottom-nav{
-      position:fixed;bottom:0;left:0;right:0;
-      height:72px;
+      position:fixed;bottom:14px;left:14px;right:14px;
+      max-width:362px;margin:0 auto;
+      height:68px;
       display:flex;align-items:center;justify-content:space-around;
-      background: #141525;
-      box-shadow: 0 -8px 25px rgba(0,0,0,0.5);
-      padding:0 8px 8px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius:24px;
+      box-shadow: 0 10px 30px rgba(15, 39, 71, 0.09);
+      padding:6px;
       z-index:100;
     }
     .nav-btn{
-      display:flex;align-items:center;justify-content:center;
-      flex:1;height:100%;padding:0;border:none;background:none;cursor:pointer;
-      color:var(--muted-foreground);transition:all .2s ease;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      flex:1;height:52px;padding:0;border:none;background:none;cursor:pointer;
+      border-radius:16px;
+      color:var(--navy);transition:all .2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      font-family: var(--font-display);
+      font-size:11px;font-weight:600;
     }
+    .nav-btn svg{width:22px;height:22px;stroke:var(--navy);opacity:0.75;transition:all .2s;}
     .nav-btn.active{
-      color:var(--primary);
-      filter: drop-shadow(0 0 8px var(--shadow-glow));
+      background: var(--citrus);
+      color:#FFFFFF;
+      box-shadow: 0 4px 14px rgba(255, 122, 0, 0.35);
     }
-    .nav-btn svg{width:22px;height:22px}
+    .nav-btn.active svg{
+      stroke:#FFFFFF;opacity:1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
     
-    /* FAB */
-    .fab-wrap{flex:1;display:flex;justify-content:center;align-items:center;position:relative}
+    /* FAB Button */
+    .fab-wrap{flex:1;display:flex;justify-content:center;align-items:center}
     .fab{
-      width:56px;height:56px;border-radius:18px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      color: var(--muted-foreground);
+      width:48px;height:48px;border-radius:16px;
+      background: var(--cream);
+      border: 1.5px solid var(--border);
+      color: var(--navy);
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
-      position:absolute;bottom:8px;
-      box-shadow: -4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);
-      transition:all .2s ease;
+      box-shadow: 0 2px 8px rgba(15, 39, 71, 0.05);
+      transition:all .2s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    .fab:active{
-      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 6px 6px 15px var(--shadow-dark);
-      transform:scale(.95);
-    }
+    .fab svg{stroke:var(--citrus);width:22px;height:22px;transition:stroke .2s;}
+    .fab:active{transform:scale(.94);}
     .fab.active{
-      background: var(--primary-gradient);
+      background: var(--citrus);
+      border-color: var(--citrus);
       color: #fff;
-      border: none;
-      box-shadow: 0 8px 25px rgba(255, 140, 112, 0.4);
+      box-shadow: 0 4px 14px rgba(255, 122, 0, 0.35);
     }
-
-    /* Cards */
-    .card{
-      border-radius:24px;padding:18px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      box-shadow: -6px -6px 16px var(--shadow-light), 10px 10px 24px var(--shadow-dark);
-    }
+    .fab.active svg{stroke:#FFFFFF;}
 
     /* Status ring */
     .ring-svg{transform:rotate(-90deg)}
-    .ring-track{fill:none;stroke:#1a1b30;stroke-width:5}
-    .ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s ease,stroke .5s; filter:drop-shadow(0 0 6px var(--shadow-glow));}
+    .ring-track{fill:none;stroke:var(--cream);stroke-width:6}
+    .ring-fill{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1s ease,stroke .5s;}
 
     /* Mic button */
     .mic-btn{
-      width:96px;height:96px;border-radius:50%;
-      background: var(--card-bg);
-      color: var(--primary);
-      border: 1px solid var(--border);
+      width:92px;height:92px;border-radius:50%;
+      background: #FFFFFF;
+      color: var(--citrus);
+      border: 3px solid var(--cream);
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
-      transition:all .2s ease;
-      position: relative;
-      box-shadow: -6px -6px 18px var(--shadow-light), 12px 12px 25px var(--shadow-dark);
+      transition:all .2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 8px 24px rgba(255, 122, 0, 0.16);
     }
     .mic-btn:active{
-      box-shadow: inset -4px -4px 10px var(--shadow-light), inset 8px 8px 20px var(--shadow-dark);
-      transform:scale(.96);
+      transform:scale(.95);
+      border-color: var(--citrus);
     }
     .mic-btn.listening{
-      background: var(--primary-gradient);
+      background: var(--citrus);
       color:#fff;
-      box-shadow: 0 0 30px rgba(255,140,112,0.4);
+      border-color: #FFFFFF;
+      box-shadow: 0 0 32px rgba(255, 122, 0, 0.5);
       animation:micPulse .8s ease-in-out infinite alternate;
     }
     @keyframes micPulse{
-      from{transform:scale(1); box-shadow:0 10px 30px rgba(255,140,112,0.3)}
-      to{transform:scale(1.05); box-shadow:0 15px 40px rgba(255,140,112,0.6)}
+      from{transform:scale(1); box-shadow:0 8px 24px rgba(255,122,0,0.3)}
+      to{transform:scale(1.06); box-shadow:0 12px 36px rgba(255,122,0,0.6)}
     }
 
     /* Wave bars */
     .wave{display:flex;align-items:center;gap:4px;height:28px}
-    .wbar{width:4px;border-radius:4px;background:var(--primary);transition:all .3s ease; box-shadow:0 0 8px var(--shadow-glow)}
+    .wbar{width:4px;border-radius:4px;background:var(--citrus);transition:all .3s ease;}
     .wbar:nth-child(1){animation:w 1s .0s ease-in-out infinite}
     .wbar:nth-child(2){animation:w 1s .15s ease-in-out infinite}
     .wbar:nth-child(3){animation:w 1s .3s ease-in-out infinite}
     .wbar:nth-child(4){animation:w 1s .45s ease-in-out infinite}
     .wbar:nth-child(5){animation:w 1s .6s ease-in-out infinite}
     @keyframes w{0%,100%{height:5px}50%{height:24px}}
-    .wave.silent .wbar{animation:none;height:5px;background:#2a2b45;box-shadow:none}
+    .wave.silent .wbar{animation:none;height:5px;background:var(--border);box-shadow:none}
 
-    /* Pill chip */
+    /* Pill chip / Tags from Citrus/Grid */
     .chip{
-      display:inline-flex;align-items:center;gap:8px;
-      font-size:12px;padding:10px 18px;border-radius:14px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      box-shadow: -3px -3px 8px var(--shadow-light), 5px 5px 12px var(--shadow-dark);
-      color:var(--muted-foreground);font-weight:600;cursor:pointer;white-space:nowrap;
+      display:inline-flex;align-items:center;gap:7px;
+      font-family: var(--font-display);
+      font-size:12px;font-weight:600;padding:9px 15px;border-radius:14px;
+      background: var(--cream);
+      border: 1.5px solid transparent;
+      color:var(--navy);cursor:pointer;white-space:nowrap;
       transition:all .2s ease;
+      box-shadow: 0 2px 6px rgba(15, 39, 71, 0.03);
     }
     .chip:active{
-      box-shadow: inset -3px -3px 8px var(--shadow-light), inset 5px 5px 12px var(--shadow-dark);
-      color: var(--primary);
+      background: var(--citrus);
+      color: #FFFFFF;
+      border-color: var(--citrus);
+      transform:scale(.97);
     }
-    .chip svg { color: var(--primary); transition:all .2s ease; }
-    .chip:active svg { filter: drop-shadow(0 0 4px var(--shadow-glow)); }
+    .chip svg { color: var(--citrus); transition:all .2s ease; }
+    .chip:active svg { color: #FFFFFF; }
 
-    /* Power buttons */
+    /* Power buttons (Square icon boxes from Citrus/Grid) */
     .power-card{
-      flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;
-      padding:22px 8px;border-radius:20px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      box-shadow: -4px -4px 12px var(--shadow-light), 8px 8px 20px var(--shadow-dark);
-      cursor:pointer;transition:all .2s ease;
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+      padding:18px 8px;border-radius:20px;
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 2px 10px rgba(15, 39, 71, 0.04);
+      cursor:pointer;transition:all .2s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .power-card:active{
-      box-shadow: inset -4px -4px 12px var(--shadow-light), inset 8px 8px 20px var(--shadow-dark);
-      transform:scale(.96);
+      transform:scale(.95);
+      border-color: var(--citrus);
+      background: var(--citrus-light);
     }
-    .power-card .emoji{display:flex;align-items:center;justify-content:center;height:32px; color:var(--primary); transition:all .2s ease;}
-    .power-card:active .emoji{filter: drop-shadow(0 0 8px var(--shadow-glow));}
-    .power-card .label{font-size:13px;font-weight:600;color:var(--foreground);}
+    .power-card .emoji-box{
+      width:44px;height:44px;border-radius:14px;
+      background: var(--cream);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--citrus);transition:all .2s;
+    }
+    .power-card:active .emoji-box{
+      background: var(--citrus);
+      color:#fff;
+    }
+    .power-card .label{
+      font-family: var(--font-display);
+      font-size:12px;font-weight:700;color:var(--navy);
+    }
 
-    /* Toggle */
+    /* Toggle switch from Citrus/Grid */
     .dir-toggle{
-      display:flex;gap:6px;padding:8px;border-radius:20px;
-      background: #111220;
-      box-shadow: inset 4px 4px 10px rgba(0,0,0,0.5), inset -4px -4px 10px rgba(255,255,255,0.03);
+      display:flex;gap:4px;padding:4px;border-radius:16px;
+      background: var(--cream);
+      border: 1px solid var(--border);
     }
-    .dir-btn{flex:1;padding:12px;border-radius:14px;border:none;cursor:pointer;font-size:13px;font-weight:700;background:none;color:var(--muted-foreground);transition:all .2s ease}
+    .dir-btn{
+      flex:1;padding:10px;border-radius:12px;border:none;cursor:pointer;
+      font-family: var(--font-display);
+      font-size:12px;font-weight:700;
+      background:none;color:var(--navy);
+      transition:all .2s ease;
+    }
     .dir-btn.on{
-      background: var(--card-bg);
-      color:var(--primary);
-      box-shadow: -3px -3px 8px var(--shadow-light), 5px 5px 12px var(--shadow-dark);
+      background: var(--citrus);
+      color:#FFFFFF;
+      box-shadow: 0 2px 8px rgba(255, 122, 0, 0.3);
+    }
+
+    /* Buttons from Citrus/Grid */
+    .btn-citrus-primary {
+      background: var(--citrus);
+      color: #FFFFFF;
+      font-family: var(--font-display);
+      font-weight: 700;
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 6px 18px rgba(255, 122, 0, 0.28);
+      transition: all .2s;
+    }
+    .btn-citrus-primary:active {
+      background: var(--citrus-hover);
+      transform: scale(.98);
+    }
+    .btn-citrus-secondary {
+      background: var(--cream);
+      color: var(--navy);
+      font-family: var(--font-display);
+      font-weight: 600;
+      border-radius: 14px;
+      border: 1.5px solid transparent;
+      transition: all .2s;
+    }
+    .btn-citrus-secondary:active {
+      border-color: var(--citrus);
+      transform: scale(.98);
+    }
+    .btn-citrus-tertiary {
+      background: #FFFFFF;
+      color: var(--navy);
+      font-family: var(--font-display);
+      font-weight: 600;
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      transition: all .2s;
+    }
+    .btn-citrus-tertiary:active {
+      border-color: var(--citrus);
+      background: var(--citrus-light);
     }
 
     /* Settings row */
-    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
     .setting-row:last-child{border:none}
 
     /* Badge */
-    .badge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px; background:#1a1b30;}
+    .badge{font-family: var(--font-display); font-size:11px;font-weight:600;padding:5px 12px;border-radius:10px; background:var(--cream); color:var(--navy);}
 
     /* Confirm overlay */
-    #overlay{position:fixed;inset:0;background:rgba(17,18,32,0.85);z-index:200;display:none;align-items:flex-end;justify-content:center;padding-bottom:12px}
+    #overlay{
+      position:fixed;inset:0;background:rgba(15,39,71,0.45);
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      z-index:200;display:none;align-items:flex-end;justify-content:center;padding-bottom:14px;
+    }
     #overlay.show{display:flex}
-    #imagePreviewOverlay{position:fixed;inset:0;background:rgba(17,18,32,0.92);z-index:210;display:none;align-items:center;justify-content:center;padding:16px}
+    #imagePreviewOverlay{
+      position:fixed;inset:0;background:rgba(15,39,71,0.55);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      z-index:210;display:none;align-items:center;justify-content:center;padding:16px;
+    }
     #imagePreviewOverlay.show{display:flex}
     .sheet{
-      background: var(--card-bg);
-      border-radius:32px;width:100%;max-width:380px;padding:26px;margin:0 12px;
-      box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
-      border: 1px solid var(--border);
+      background: #FFFFFF;
+      border-radius:28px;width:100%;max-width:380px;padding:26px;margin:0 12px;
+      box-shadow: 0 20px 60px rgba(15,39,71,0.18);
+      border: 1.5px solid var(--border);
     }
 
     input,textarea{
-      color:var(--foreground);
-      background: #111220;
-      outline:none;border:none;
-      box-shadow: inset 3px 3px 8px rgba(0,0,0,0.5), inset -3px -3px 8px rgba(255,255,255,0.03);
-      border-radius:14px;padding:14px 16px;font-family:inherit;width:100%;
+      color:var(--navy);
+      background: #FFFFFF;
+      outline:none;
+      border:1.5px solid var(--border-input);
+      border-radius:14px;padding:12px 16px;font-family:var(--font-body);width:100%;
       transition:all .2s ease;
     }
     input::placeholder,textarea::placeholder{color:var(--placeholder)}
-    input:focus,textarea:focus{box-shadow: inset 3px 3px 8px rgba(0,0,0,0.6), inset -3px -3px 8px rgba(255,255,255,0.03), 0 0 0 1px var(--primary);}
+    input:focus,textarea:focus{
+      border-color:var(--citrus);
+      box-shadow: 0 0 0 3px rgba(255,122,0,0.15);
+    }
     button{cursor:pointer;font-family:inherit}
 </style>
 </head>
@@ -237,86 +346,102 @@
 ═══════════════════════════════════════ -->
 <div id="page-home" class="page px-4 pt-5">
 
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-5">
+  <!-- Header (CITRUS / GRID style) -->
+  <div class="flex items-center justify-between mb-4">
     <div>
-      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Remote PC</p>
-      <h1 class="text-2xl font-bold">PC của tôi</h1>
+      <p class="text-[10px] font-bold text-[var(--muted-foreground)] tracking-[0.2em] uppercase font-display">Bảng điều khiển</p>
+      <h1 class="text-2xl font-bold font-display"><span class="text-[var(--navy)]">REMOTE</span> <span class="text-[var(--citrus)]">/</span> <span class="text-[var(--navy)]">PC</span></h1>
     </div>
-    <button onclick="goto('settings')" class="w-9 h-9 rounded-full flex items-center justify-center border border-[var(--border)]" style="background:var(--card)">
-      ⚙️
+    <button onclick="goto('settings')" class="w-10 h-10 rounded-xl flex items-center justify-center border-[1.5px] border-[var(--border)] bg-[#FFFFFF] shadow-sm active:scale-95 transition-transform" title="Cài đặt">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
 
   <!-- Status Ring Card -->
   <div class="card flex flex-col items-center py-6 mb-4 relative">
-    <div class="relative" style="width:180px;height:180px">
-      <svg class="ring-svg" width="180" height="180" viewBox="0 0 180 180">
-        <circle class="ring-track" cx="90" cy="90" r="75"/>
-        <circle id="ringFill" class="ring-fill" cx="90" cy="90" r="75"
-          stroke="#ef4444"
-          stroke-dasharray="471"
-          stroke-dashoffset="471"/>
+    <div class="relative" style="width:170px;height:170px">
+      <svg class="ring-svg" width="170" height="170" viewBox="0 0 170 170">
+        <circle class="ring-track" cx="85" cy="85" r="70"/>
+        <circle id="ringFill" class="ring-fill" cx="85" cy="85" r="70"
+          stroke="#E63946"
+          stroke-dasharray="440"
+          stroke-dashoffset="440"/>
       </svg>
       <div class="absolute inset-0 flex flex-col items-center justify-center">
-        <div id="statusEmoji" class="w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#ff6b8b] mb-2 shadow-sm"></div>
-        <p id="statusLabel" class="text-sm font-semibold text-[var(--muted-foreground)]">Đang tắt</p>
+        <div id="statusEmoji" class="w-12 h-12 rounded-full border-4 border-[#FFFFFF] shadow-[0_4px_16px_rgba(230,57,70,0.25)] bg-[#E63946] mb-2 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        </div>
+        <p id="statusLabel" class="text-sm font-bold font-display text-[var(--navy)]">Đang tắt</p>
       </div>
     </div>
 
-    <!-- Stats row -->
-    <div class="flex gap-3 mt-4 w-full px-2">
-      <div class="flex-1 text-center">
-        <p class="text-xs text-[var(--muted-foreground)]">Ping</p>
-        <p id="hPing" class="text-sm font-bold mt-0.5">—</p>
+    <!-- Analytics Stats row matching ANALYTICS card in image -->
+    <div class="grid grid-cols-3 gap-2 mt-5 w-full pt-4 border-t border-[var(--border)]">
+      <div class="text-center px-1">
+        <p class="text-[10px] font-bold font-display tracking-wider text-[var(--muted-foreground)] uppercase">Đường truyền</p>
+        <p id="hPing" class="text-sm font-bold font-display mt-0.5 text-[var(--navy)] truncate">—</p>
       </div>
-      <div class="w-px" style="background:var(--border)"></div>
-      <div class="flex-1 text-center">
-        <p class="text-xs text-[var(--muted-foreground)]">SSH</p>
-        <p id="hSSH" class="text-sm font-bold mt-0.5">—</p>
+      <div class="text-center px-1 border-x border-[var(--border)]">
+        <p class="text-[10px] font-bold font-display tracking-wider text-[var(--muted-foreground)] uppercase">Tải CPU</p>
+        <p id="hSSH" class="text-sm font-bold font-display mt-0.5 text-[var(--navy)] truncate">—</p>
       </div>
-      <div class="w-px" style="background:var(--border)"></div>
-      <div class="flex-1 text-center">
-        <p class="text-xs text-[var(--muted-foreground)]">Uptime</p>
-        <p id="hUptime" class="text-sm font-bold mt-0.5">—</p>
+      <div class="text-center px-1">
+        <p class="text-[10px] font-bold font-display tracking-wider text-[var(--muted-foreground)] uppercase">Uptime</p>
+        <p id="hUptime" class="text-sm font-bold font-display mt-0.5 text-[var(--navy)] truncate">—</p>
       </div>
     </div>
 
-    <!-- Check button -->
-    <button onclick="checkStatus(true)" class="mt-4 text-xs px-5 py-2 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
-      ↻ Kiểm tra kết nối
+    <!-- Check connection button -->
+    <button onclick="checkStatus(true)" class="btn-citrus-tertiary mt-4 text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-95">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      Kiểm tra kết nối
     </button>
-    <p id="backendDisplay" class="text-[10px] text-[var(--muted-foreground)] mt-2 font-mono truncate max-w-[260px] text-center"></p>
+    <p id="backendDisplay" class="text-[10px] text-[var(--muted-foreground)] mt-2 font-mono truncate max-w-[280px] text-center"></p>
   </div>
 
-  <!-- Power buttons -->
-  <div class="flex gap-3 mb-4">
+  <!-- Power buttons (Square icon boxes from Citrus/Grid) -->
+  <div class="grid grid-cols-3 gap-3 mb-4">
     <div class="power-card" onclick="doWake()">
-      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+      <div class="emoji-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+      </div>
       <span class="label">Bật máy</span>
     </div>
     <div class="power-card" onclick="doShutdown()">
-      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+      <div class="emoji-box" style="color:var(--danger)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+      </div>
       <span class="label">Tắt máy</span>
     </div>
     <div class="power-card" onclick="doRestart()">
-      <svg class="emoji" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      <div class="emoji-box" style="color:var(--navy)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </div>
       <span class="label">Restart</span>
     </div>
   </div>
 
-  <!-- Assistant card -->
-  <div class="rounded-2xl p-4 mb-4" style="background:rgba(196,144,255,0.1);border:1px solid rgba(196,144,255,0.2);">
-    <p class="text-xs font-semibold mb-1" style="color:var(--primary)"><svg class="inline-block align-text-bottom mr-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg> Antigravity</p>
-    <p id="assistantMsg" class="text-sm text-[var(--foreground)]">Máy đang tắt. Nhấn <svg class="inline-block align-text-bottom text-[var(--foreground)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> để bật hoặc dùng giọng nói.</p>
-    <button onclick="goto('cmd')" class="mt-3 text-xs px-4 py-2 rounded-full font-semibold active:opacity-70" style="background:var(--primary-dark);color:#fff">
-      Gửi lệnh →
+  <!-- Assistant card (Cream background matching design) -->
+  <div class="rounded-2xl p-4 mb-4" style="background:var(--cream);border:1.5px solid #F0D5BE;">
+    <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-[var(--citrus)]"></span>
+        <p class="text-xs font-bold font-display uppercase tracking-wider text-[var(--citrus)]">Trợ lý Antigravity</p>
+      </div>
+      <span class="text-[10px] font-bold font-display px-2 py-0.5 rounded-full bg-white/70 text-[var(--navy)]">AI AGENT</span>
+    </div>
+    <p id="assistantMsg" class="text-sm font-medium text-[var(--navy)] mt-1 leading-relaxed">Máy đang tắt. Nhấn nút Bật máy để khởi động từ xa.</p>
+    <button onclick="goto('cmd')" class="btn-citrus-primary mt-3 text-xs px-4 py-2.5 rounded-xl font-bold flex items-center gap-1">
+      Gửi lệnh ngay →
     </button>
   </div>
 
   <!-- Recent log preview -->
-  <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">Hoạt động gần đây</p>
-  <div id="homeLog" class="flex flex-col gap-2 mb-4">
+  <div class="flex items-center justify-between mb-2">
+    <p class="text-[10px] font-bold font-display text-[var(--muted-foreground)] tracking-widest uppercase">Hoạt động gần đây</p>
+    <button onclick="goto('log')" class="text-[11px] font-bold font-display text-[var(--citrus)]">Xem tất cả →</button>
+  </div>
+  <div id="homeLog" class="card p-3 flex flex-col gap-2 mb-4">
     <p class="text-xs text-[var(--muted-foreground)] text-center py-3">Chưa có hoạt động</p>
   </div>
 
@@ -327,59 +452,56 @@
 ═══════════════════════════════════════ -->
 <div id="page-cmd" class="page hidden px-4 pt-5">
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="flex items-center justify-between mb-4">
     <div>
-      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">AI Control</p>
-      <h1 class="text-2xl font-bold">Gửi lệnh</h1>
+      <p class="text-[10px] font-bold text-[var(--muted-foreground)] tracking-[0.2em] uppercase font-display">AI Voice & Text</p>
+      <h1 class="text-2xl font-bold font-display"><span class="text-[var(--navy)]">RA LỆNH</span> <span class="text-[var(--citrus)]">/</span> <span class="text-[var(--navy)]">ĐIỀU KHIỂN</span></h1>
     </div>
-    <div id="cmdOnlineDot" class="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] px-3 py-1.5 rounded-full border border-[var(--border)]" style="background:var(--card)">
-      <span class="w-2 h-2 rounded-full bg-[#ff6b8b] inline-block"></span>
+    <div id="cmdOnlineDot" class="flex items-center gap-1.5 text-xs font-bold font-display px-3 py-1.5 rounded-xl border-[1.5px] border-[var(--border)] bg-[#FFFFFF]">
+      <span class="w-2 h-2 rounded-full bg-[#E63946] inline-block"></span>
       Offline
     </div>
   </div>
 
   <!-- Mic section -->
-  <div class="card flex flex-col items-center py-8 mb-4">
-    <div class="wave mb-5 silent" id="waveViz">
+  <div class="card flex flex-col items-center py-6 mb-4">
+    <div class="wave mb-4 silent" id="waveViz">
       <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
       <div class="wbar"></div><div class="wbar"></div>
     </div>
 
-    <button id="micBtn" class="mic-btn mb-4" onclick="toggleMic()"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></button>
+    <button id="micBtn" class="mic-btn mb-3" onclick="toggleMic()">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+    </button>
 
-    <p id="micHint" class="text-sm text-[var(--muted-foreground)]">Nhấn để nói bằng tiếng Việt</p>
-    <p id="transcript" class="text-base font-semibold mt-2 min-h-6 text-center"></p>
+    <p id="micHint" class="text-xs font-semibold text-[var(--muted-foreground)] font-display">Chạm mic để nói bằng tiếng Việt</p>
+    <p id="transcript" class="text-sm font-bold mt-2 min-h-6 text-center text-[var(--navy)] font-display"></p>
   </div>
 
-  <!-- Divider -->
-  <div class="flex items-center gap-3 mb-4">
-    <div class="flex-1 h-px" style="background:var(--border)"></div>
-    <p class="text-xs text-[var(--muted-foreground)]">hoặc gõ lệnh</p>
-    <div class="flex-1 h-px" style="background:var(--border)"></div>
-  </div>
-
-    <!-- Text input -->
-  <div class="card mb-4">
-    <textarea id="cmdText" placeholder="Nhập lệnh hoặc nói bằng tiếng Việt…&#10;Ví dụ: mở Cốc Cốc, mở Zalo, chụp màn hình..." rows="2"
+  <!-- Text input (Matching INPUT FIELDS in design system) -->
+  <div class="card mb-4 p-4">
+    <textarea id="cmdText" placeholder="Nhập lệnh tiếng Việt...&#10;Ví dụ: mở Cốc Cốc, mở Zalo, chụp màn hình..." rows="2"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendText();}"
-      class="w-full resize-none text-sm border-none"></textarea>
+      class="w-full resize-none text-sm"></textarea>
     <button onclick="sendText()"
-      class="w-full py-3 rounded-xl text-sm font-semibold mt-3 active:opacity-70 neo-shadow"
-      style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">
+      class="btn-citrus-primary w-full py-3 rounded-xl text-sm font-bold mt-3 flex items-center justify-center gap-1.5">
       Gửi lệnh ↗
     </button>
   </div>
 
   <!-- Command Response Chat Box -->
   <div class="card mb-4 p-4">
-    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-2">Phản hồi từ máy tính</p>
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-[10px] font-bold font-display text-[var(--muted-foreground)] tracking-widest uppercase">Phản hồi từ máy tính</p>
+      <span class="w-2 h-2 rounded-full bg-[var(--citrus)]"></span>
+    </div>
     <div id="cmdChatList" class="flex flex-col gap-2" style="max-height: 220px; overflow-y: auto;">
       <div class="text-xs text-[var(--muted-foreground)] text-center py-2">Sẵn sàng nhận lệnh từ bạn...</div>
     </div>
   </div>
 
-  <!-- Quick chips -->
-  <p class="text-xs text-[var(--muted-foreground)] mb-2">Lệnh nhanh (Chạm là mở ngay)</p>
+  <!-- Quick chips (Tags from Citrus/Grid) -->
+  <p class="text-[10px] font-bold font-display text-[var(--muted-foreground)] tracking-widest uppercase mb-2">Lệnh nhanh (Chạm là mở ngay)</p>
   <div class="flex gap-2 flex-wrap mb-4">
     <button class="chip" onclick="quickText('mở Cốc Cốc')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg> Cốc Cốc</button>
     <button class="chip" onclick="quickText('mở Zalo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Zalo</button>
@@ -400,27 +522,27 @@
 
   <div class="flex items-center justify-between mb-4">
     <div>
-      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Transfer</p>
-      <h1 class="text-2xl font-bold">Gửi File</h1>
+      <p class="text-[10px] font-bold text-[var(--muted-foreground)] tracking-[0.2em] uppercase font-display">Chuyển & Quản lý</p>
+      <h1 class="text-2xl font-bold font-display"><span class="text-[var(--navy)]">TRUYỀN FILE</span> <span class="text-[var(--citrus)]">/</span> <span class="text-[var(--navy)]">PC</span></h1>
     </div>
   </div>
 
-  <!-- Direction toggle -->
+  <!-- Direction toggle (Pill switch) -->
   <div class="dir-toggle mb-4">
-    <button class="dir-btn on" id="dirSendBtn" onclick="setDir('send')"><svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> → <svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> &nbsp;Lên PC</button>
-    <button class="dir-btn" id="dirRecvBtn" onclick="setDir('recv')"><svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> → <svg class="inline-block align-text-bottom" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> &nbsp;Về máy</button>
+    <button class="dir-btn on" id="dirSendBtn" onclick="setDir('send')">📱 Điện thoại → PC</button>
+    <button class="dir-btn" id="dirRecvBtn" onclick="setDir('recv')">💻 PC → Điện thoại</button>
   </div>
 
   <!-- SEND section -->
   <div id="sec-send">
-    <div class="card flex flex-col items-center py-8 mb-4">
-      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-3 text-[var(--muted-foreground)]"
-        style="background:var(--background);border:2px dashed var(--border)"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 16 4-4 4 4"/></svg></div>
-      <p class="font-semibold mb-1">Chọn file từ điện thoại</p>
-      <p class="text-xs text-[var(--muted-foreground)] text-center mb-5">Tự động lưu vào D:\Remote PC</p>
+    <div class="card flex flex-col items-center py-7 mb-4 border-dashed border-2 border-[var(--border)]">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 text-[var(--citrus)] bg-[var(--cream)]">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 16 4-4 4 4"/></svg>
+      </div>
+      <p class="font-bold font-display text-sm text-[var(--navy)] mb-1">Chọn file từ điện thoại</p>
+      <p class="text-xs text-[var(--muted-foreground)] text-center mb-4">Tự động lưu vào thư mục D:\Remote PC</p>
       <input type="file" id="phoneFileInput" multiple style="display:none" onchange="uploadSelectedFiles(this)">
-      <button onclick="document.getElementById('phoneFileInput').click()" class="w-full max-w-xs py-3 rounded-2xl text-sm font-semibold active:opacity-70"
-        style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">
+      <button onclick="document.getElementById('phoneFileInput').click()" class="btn-citrus-primary w-full max-w-xs py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5">
         Chọn file từ điện thoại…
       </button>
     </div>
@@ -429,23 +551,20 @@
     </div>
   </div>
 
-  
   <!-- RECEIVE section -->
   <div id="sec-recv" class="hidden">
-    
     <!-- AI Search Card -->
     <div class="card mb-4">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-[var(--primary)]"><svg class="inline-block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg></span>
-        <p class="text-xs text-[var(--primary)] font-semibold uppercase tracking-wider">Trợ lý AI Tìm File</p>
+      <div class="flex items-center gap-2 mb-1">
+        <span class="w-2 h-2 rounded-full bg-[var(--citrus)]"></span>
+        <p class="text-xs text-[var(--citrus)] font-bold font-display uppercase tracking-wider">Trợ lý AI Tìm File</p>
       </div>
       <p class="text-xs text-[var(--muted-foreground)] mb-3">Chỉ cần ra lệnh, AI sẽ quét PC để tìm file mới nhất</p>
       <div class="flex gap-2">
         <input id="aiFileCmd" type="text" placeholder="Vd: Gửi file autocad đồ án sáng nay..."
-          class="flex-1 text-sm border border-[var(--border)] rounded-xl px-3 py-2 "/>
+          class="flex-1 text-sm"/>
         <button onclick="analyzeFile()"
-          class="px-4 py-2 rounded-xl text-sm font-bold active:opacity-60 whitespace-nowrap"
-          style="background:var(--primary);color:#000; box-shadow:0 0 16px rgba(163,76,255,0.4)">
+          class="btn-citrus-primary px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap">
           Tìm & Gửi
         </button>
       </div>
@@ -453,10 +572,9 @@
 
     <!-- File Explorer Card -->
     <div class="card mb-4 p-0 overflow-hidden">
-      <div class="px-4 pt-4 pb-2 border-b border-[var(--border)] flex justify-between items-center ">
-        <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Duyệt File PC (Trực tiếp)</p>
+      <div class="px-4 py-3 border-b border-[var(--border)] flex justify-between items-center bg-[var(--cream)]/40">
+        <p class="text-[11px] font-bold font-display text-[var(--navy)] uppercase tracking-wider">Duyệt File PC Trực Tiếp</p>
       </div>
-      
       <div id="fileExplorerTree" class="p-2 flex flex-col gap-1" style="max-height: 320px; overflow-y: auto; overflow-x: hidden;"></div>
     </div>
   </div>
@@ -464,18 +582,14 @@
   <!-- File result card -->
   <div id="fileResult" class="hidden card mb-4">
     <div class="flex items-center gap-3 mb-4">
-      <span id="fIcon" class="text-3xl flex items-center justify-center p-2 rounded-xl bg-[var(--primary-dark)] border border-[var(--primary)]/30"><svg class="inline-block text-[var(--primary)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+      <span id="fIcon" class="text-3xl flex items-center justify-center p-2 rounded-xl bg-[var(--cream)] border border-[var(--border)]"><svg class="inline-block text-[var(--citrus)]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
       <div class="flex-1 min-w-0">
-        <p id="fName" class="font-semibold truncate"></p>
+        <p id="fName" class="font-bold font-display truncate text-[var(--navy)]"></p>
         <p id="fSize" class="text-xs text-[var(--muted-foreground)]"></p>
       </div>
       <span id="fBadge" class="badge"></span>
     </div>
-
-    <!-- Method box -->
-    <div id="fMethod" class="rounded-xl p-3 mb-4 text-xs" style="background:var(--background)"></div>
-
-    <!-- Actions -->
+    <div id="fMethod" class="rounded-xl p-3 mb-4 text-xs bg-[var(--cream)]/40 text-[var(--navy)]"></div>
     <div id="fActions" class="flex gap-2"></div>
   </div>
 
@@ -488,10 +602,10 @@
 
   <div class="flex items-center justify-between mb-4">
     <div>
-      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Activity</p>
-      <h1 class="text-2xl font-bold">Lịch sử</h1>
+      <p class="text-[10px] font-bold text-[var(--muted-foreground)] tracking-[0.2em] uppercase font-display">Nhật ký hoạt động</p>
+      <h1 class="text-2xl font-bold font-display"><span class="text-[var(--navy)]">LỊCH SỬ</span> <span class="text-[var(--citrus)]">/</span> <span class="text-[var(--navy)]">LOGS</span></h1>
     </div>
-    <button onclick="clearLog()" class="text-xs px-3 py-1.5 rounded-full border border-[var(--border)] text-[var(--muted-foreground)] active:opacity-60">
+    <button onclick="clearLog()" class="btn-citrus-tertiary text-xs px-3 py-1.5 rounded-xl font-bold">
       Xoá tất cả
     </button>
   </div>
@@ -506,130 +620,125 @@
 ═══════════════════════════════════════ -->
 <div id="page-settings" class="page hidden px-4 pt-5">
 
-  <div class="flex items-center justify-between mb-5">
+  <div class="flex items-center justify-between mb-4">
     <div>
-      <p class="text-xs text-[var(--muted-foreground)] tracking-widest uppercase">Cài đặt</p>
-      <h1 class="text-2xl font-bold">Settings</h1>
+      <p class="text-[10px] font-bold text-[var(--muted-foreground)] tracking-[0.2em] uppercase font-display">Cấu hình & Kết nối</p>
+      <h1 class="text-2xl font-bold font-display"><span class="text-[var(--navy)]">CÀI ĐẶT</span> <span class="text-[var(--citrus)]">/</span> <span class="text-[var(--navy)]">SYSTEM</span></h1>
     </div>
   </div>
 
   <div class="card mb-4">
-    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-3">Cấu hình hệ thống</p>
+    <p class="text-[10px] font-bold font-display text-[var(--muted-foreground)] tracking-widest uppercase mb-2">Cấu hình hệ thống</p>
     
     <!-- Gemini AI Agent -->
     <div class="setting-row cursor-pointer active:opacity-60" onclick="configGeminiKey()">
       <div>
-        <p class="text-sm font-medium">Trợ lý AI Agent (Gemini AI)</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Trợ lý AI Agent (Gemini AI)</p>
         <p id="settingGeminiStatus" class="text-xs text-[var(--muted-foreground)]">Chưa cài đặt (Dùng bộ lệnh mặc định)</p>
       </div>
-      <span class="text-xs text-[var(--primary)] font-semibold">Cài đặt 🤖</span>
+      <span class="text-xs text-[var(--citrus)] font-bold font-display">Cài đặt 🤖</span>
     </div>
 
     <!-- GitHub WOL Token -->
     <div class="setting-row cursor-pointer active:opacity-60" onclick="configGitHubWOL()">
       <div>
-        <p class="text-sm font-medium">Bật máy từ xa (GitHub WOL)</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Bật máy từ xa (GitHub WOL)</p>
         <p id="settingGHStatus" class="text-xs text-[var(--muted-foreground)]">Chưa cấu hình</p>
       </div>
-      <span class="text-xs text-[var(--primary)] font-semibold">Cài đặt ⚙️</span>
+      <span class="text-xs text-[var(--citrus)] font-bold font-display">Cài đặt ⚙️</span>
     </div>
     
     <!-- Tên PC -->
     <div class="setting-row cursor-pointer active:opacity-60" onclick="changePCName()">
       <div>
-        <p class="text-sm font-medium">Tên PC</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Tên PC</p>
         <p id="settingPCName" class="text-xs text-[var(--muted-foreground)]">PC của tôi</p>
       </div>
-      <span class="text-xs text-[var(--primary)] font-semibold">Đổi tên ✏️</span>
+      <span class="text-xs text-[var(--citrus)] font-bold font-display">Đổi tên ✏️</span>
     </div>
 
     <!-- Ngưỡng chuyển file -->
     <div class="setting-row cursor-pointer active:opacity-60" onclick="toggleThreshold()">
       <div>
-        <p class="text-sm font-medium">Ngưỡng gửi trực tiếp</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Ngưỡng gửi trực tiếp</p>
         <p class="text-xs text-[var(--muted-foreground)]">Dưới ngưỡng gửi thẳng, trên gửi qua Drive</p>
       </div>
-      <span id="settingThreshold" class="badge" style="background:var(--primary-dark);color:var(--primary)">50 MB</span>
+      <span id="settingThreshold" class="badge">50 MB</span>
     </div>
 
     <!-- Google Drive status -->
     <div class="setting-row">
       <div>
-        <p class="text-sm font-medium">Google Drive Thư mục</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Google Drive Thư mục</p>
         <p class="text-xs text-[var(--muted-foreground)]">Ổ G:\My Drive\Remote PC</p>
       </div>
-      <span class="badge" style="background:rgba(34,197,94,.15);color:#16a34a">Đã kết nối</span>
+      <span class="badge" style="background:#E6F4EA;color:#00A86B">Đã kết nối</span>
     </div>
 
     <!-- Cloudflare Tunnel status -->
     <div class="setting-row">
       <div>
-        <p class="text-sm font-medium">Cloudflare Tunnel</p>
+        <p class="text-sm font-bold font-display text-[var(--navy)]">Cloudflare Tunnel</p>
         <p class="text-xs text-[var(--muted-foreground)]">Đang truyền trực tiếp 24/7</p>
       </div>
-      <span class="badge" style="background:rgba(34,197,94,.15);color:#16a34a">Online</span>
+      <span class="badge" style="background:#E6F4EA;color:#00A86B">Online</span>
     </div>
   </div>
 
   <div class="card mb-4">
-    <p class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-3">Dữ liệu & Bộ nhớ</p>
+    <p class="text-[10px] font-bold font-display text-[var(--muted-foreground)] tracking-widest uppercase mb-2">Dữ liệu & Bộ nhớ</p>
     <div class="setting-row cursor-pointer active:opacity-60" onclick="clearLog()">
       <div>
-        <p class="text-sm font-medium text-red-400">Xoá toàn bộ lịch sử lệnh</p>
+        <p class="text-sm font-bold font-display text-[var(--danger)]">Xoá toàn bộ lịch sử lệnh</p>
         <p class="text-xs text-[var(--muted-foreground)]">Làm sạch bộ nhớ lưu trữ trên máy</p>
       </div>
-      <span class="text-xs text-red-400 font-semibold">Xóa 🗑️</span>
+      <span class="text-xs text-[var(--danger)] font-bold font-display">Xóa 🗑️</span>
     </div>
   </div>
 
-  <p class="text-xs text-[var(--muted-foreground)] text-center">v1.2.0 • Remote PC Controller</p>
+  <p class="text-[11px] font-bold font-display text-[var(--muted-foreground)] text-center">CITRUS / GRID • Remote PC v2.0</p>
 </div>
 
 <!-- ═══════════════════════════════════════
-     BOTTOM NAV
+     BOTTOM NAV (Matching UI ELEMENTS in design)
 ═══════════════════════════════════════ -->
 <nav class="bottom-nav">
   <!-- Home -->
-  <button class="nav-btn active" id="nav-home" onclick="goto('home')">
+  <button class="nav-btn active" id="nav-home" onclick="goto('home')" title="Trang chủ">
     <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    
   </button>
 
   <!-- Commands -->
-  <button class="nav-btn" id="nav-cmd" onclick="goto('cmd')">
+  <button class="nav-btn" id="nav-cmd" onclick="goto('cmd')" title="Ra lệnh">
     <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-    
   </button>
 
   <!-- FAB -->
   <div class="fab-wrap">
     <button class="fab" id="nav-file" onclick="goto('file')" title="Gửi file">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
     </button>
   </div>
 
   <!-- History -->
-  <button class="nav-btn" id="nav-log" onclick="goto('log')">
+  <button class="nav-btn" id="nav-log" onclick="goto('log')" title="Lịch sử">
     <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    
   </button>
 
   <!-- Settings -->
-  <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
+  <button class="nav-btn" id="nav-settings" onclick="goto('settings')" title="Cài đặt">
     <svg class="nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>
-    
   </button>
 </nav>
 
 <!-- CONFIRM SHEET -->
 <div id="overlay" onclick="closeSheet()">
   <div class="sheet" onclick="event.stopPropagation()">
-    <p id="sheetTitle" class="font-bold text-lg text-center mb-1"></p>
-    <p id="sheetDesc" class="text-sm text-[var(--muted-foreground)] text-center mb-5"></p>
-    <div class="flex gap-3">
-      <button onclick="closeSheet()" class="flex-1 py-3 rounded-2xl text-sm font-medium border border-[var(--border)] active:opacity-60">Huỷ</button>
-      <button id="sheetConfirm" class="flex-1 py-3 rounded-2xl text-sm font-semibold active:opacity-70 neo-shadow"
-        style="background:var(--primary-gradient);color:#fff; font-weight:700; border:none; box-shadow:-4px -4px 12px var(--shadow-light), 6px 6px 16px var(--shadow-dark);">Xác nhận</button>
+    <p id="sheetTitle" class="font-bold font-display text-lg text-center mb-1 text-[var(--navy)]"></p>
+    <p id="sheetDesc" class="text-xs text-[var(--muted-foreground)] text-center mb-5 leading-relaxed"></p>
+    <div class="flex gap-2">
+      <button onclick="closeSheet()" class="btn-citrus-secondary flex-1 py-3 text-sm">Huỷ</button>
+      <button id="sheetConfirm" class="btn-citrus-primary flex-1 py-3 text-sm">Xác nhận</button>
     </div>
   </div>
 </div>
@@ -637,21 +746,22 @@
 <!-- IMAGE PREVIEW & SAVE MODAL -->
 <div id="imagePreviewOverlay" onclick="closeImagePreview()">
   <div class="sheet text-center" onclick="event.stopPropagation()" style="margin:auto;">
-    <p id="imgPreviewTitle" class="font-bold text-base text-center mb-1 text-white">🖼️ Lưu Ảnh Vào Thiết Bị</p>
+    <p id="imgPreviewTitle" class="font-bold font-display text-base text-center mb-1 text-[var(--navy)]">🖼️ Lưu Ảnh Vào Thiết Bị</p>
     <p class="text-xs text-[var(--muted-foreground)] mb-3 leading-relaxed">
       💡 <b>Chạm và giữ vào ảnh</b> dưới đây ➔ Chọn <b>"Lưu hình ảnh"</b> để lưu vào Cuộn Camera (Ảnh)!
     </p>
-    <div class="rounded-2xl overflow-hidden mb-4 border border-[var(--border)] bg-[#111220] flex items-center justify-center p-2" style="max-height:260px;">
+    <div class="rounded-2xl overflow-hidden mb-4 border border-[var(--border)] bg-[var(--ivory)] flex items-center justify-center p-2" style="max-height:260px;">
       <img id="imgPreviewTag" src="" alt="Preview" style="max-width:100%;max-height:240px;object-fit:contain;border-radius:12px;" />
     </div>
     <div class="flex gap-2">
-      <button id="btnSaveToFiles" class="flex-1 py-3 rounded-2xl text-xs font-bold neo-shadow" style="background:var(--card-bg);color:var(--primary);border:1px solid var(--border);">📁 Lưu Vào Tệp</button>
-      <button onclick="closeImagePreview()" class="py-3 px-5 rounded-2xl text-xs font-semibold border border-[var(--border)] active:opacity-60">Đóng</button>
+      <button id="btnSaveToFiles" class="btn-citrus-primary flex-1 py-3 text-xs">📁 Lưu Vào Tệp</button>
+      <button onclick="closeImagePreview()" class="btn-citrus-secondary py-3 px-5 text-xs">Đóng</button>
     </div>
   </div>
 </div>
 
 <script>
+
 // ── CONSTANTS & GLOBAL CONFIG ──────────────────────────
 const IS_GITHUB_PAGES = window.location.hostname.includes('github.io');
 const DEFAULT_GH_REPO = 'nguyengialuat01219493779-beep/wake-pc';
@@ -798,15 +908,15 @@ function setPC(on) {
   pcOn = on;
   const fill = document.getElementById('ringFill');
   if (fill) {
-    fill.style.stroke = on ? '#22c55e' : '#ef4444';
+    fill.style.stroke = on ? '#FF7A00' : '#E63946';
     fill.style.strokeDashoffset = on ? '118' : '471';
   }
 
   const emoji = document.getElementById('statusEmoji');
   if (emoji) {
     emoji.className = on 
-      ? 'w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#4deeea] mb-2 shadow-sm' 
-      : 'w-12 h-12 rounded-full border-4 border-[#17182b] shadow-[0_0_15px_rgba(0,0,0,0.5)] bg-[#ff6b8b] mb-2 shadow-sm';
+      ? 'w-12 h-12 rounded-full border-4 border-[#FFFFFF] shadow-[0_4px_16px_rgba(255,122,0,0.35)] bg-[#FF7A00] mb-2 flex items-center justify-center' 
+      : 'w-12 h-12 rounded-full border-4 border-[#FFFFFF] shadow-[0_4px_16px_rgba(230,57,70,0.25)] bg-[#E63946] mb-2 flex items-center justify-center';
   }
   document.getElementById('statusLabel').textContent = on ? 'Đang bật' : 'Đang tắt';
   updateCmdOnline();
@@ -815,7 +925,7 @@ function setPC(on) {
 function updateCmdOnline() {
   const dot = document.getElementById('cmdOnlineDot');
   if (!dot) return;
-  dot.innerHTML = `<span class="w-2 h-2 rounded-full inline-block ${pcOn ? 'bg-[#4deeea]' : 'bg-[#ff6b8b]'}"></span> ${pcOn ? 'Online' : 'Offline'}`;
+  dot.innerHTML = `<span class="w-2 h-2 rounded-full inline-block ${pcOn ? 'bg-[#FF7A00]' : 'bg-[#E63946]'}"></span> ${pcOn ? 'Online' : 'Offline'}`;
 }
 
 async function checkStatus(forceSync = false) {
@@ -1590,7 +1700,7 @@ async function sendCommand(text) {
     if (chatList.querySelector('.text-center')) chatList.innerHTML = '';
     const userMsg = document.createElement('div');
     userMsg.className = 'text-xs p-2.5 rounded-xl self-end max-w-[85%]';
-    userMsg.style.cssText = 'background:var(--primary-dark);color:#fff;align-self:flex-end;';
+    userMsg.style.cssText = 'background:var(--navy);color:#fff;align-self:flex-end;border-radius:14px;padding:9px 13px;font-family:var(--font-body);';
     userMsg.innerHTML = `<b>Bạn:</b> ${cmd}`;
     chatList.appendChild(userMsg);
     chatList.scrollTop = chatList.scrollHeight;
@@ -1612,7 +1722,7 @@ async function sendCommand(text) {
       if (chatList) {
         const pcMsg = document.createElement('div');
         pcMsg.className = 'text-xs p-2.5 rounded-xl self-start max-w-[85%] whitespace-pre-wrap';
-        pcMsg.style.cssText = 'background:rgba(255,255,255,0.05);color:var(--foreground);border:1px solid var(--border);align-self:flex-start;';
+        pcMsg.style.cssText = 'background:var(--cream);color:var(--navy);border-left:3px solid var(--citrus);align-self:flex-start;border-radius:14px;padding:9px 13px;font-family:var(--font-body);';
         pcMsg.innerHTML = `<b>${agentLabel}:</b> ${data.reply}`;
         chatList.appendChild(pcMsg);
         chatList.scrollTop = chatList.scrollHeight;
@@ -1762,7 +1872,7 @@ function updateHomeLogPreview() {
   }
   logs.slice(0, 3).forEach(l => {
     const el = document.createElement('div');
-    el.className = 'log-item border-l-2 pl-3 py-1 border-[var(--primary)]';
+    el.className = 'log-item border-l-2 pl-3 py-1 border-[var(--citrus)] bg-[var(--cream)]/30 rounded-r-xl';
     el.innerHTML = `<p class="text-xs">${l.msg}</p><p class="text-xs text-[var(--muted-foreground)] mt-0.5">${l.time}</p>`;
     homeLog.appendChild(el);
   });
@@ -1788,7 +1898,7 @@ window.onload = async function() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js?v=6').then(reg => {
+    navigator.serviceWorker.register('./sw.js?v=7').then(reg => {
       console.log('PWA ServiceWorker registered');
     }).catch(console.error);
   }
@@ -1801,6 +1911,7 @@ window.onload = async function() {
     await checkStatus();
   }, 15000);
 };
+
 </script>
 </body>
 </html>
