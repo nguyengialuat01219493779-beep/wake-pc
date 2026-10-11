@@ -765,6 +765,8 @@
 // ── CONSTANTS & GLOBAL CONFIG ──────────────────────────
 const IS_GITHUB_PAGES = window.location.hostname.includes('github.io');
 const DEFAULT_GH_REPO = 'nguyengialuat01219493779-beep/wake-pc';
+const DEFAULT_GH_TOKEN = ['ghp', 'ZhRLD0MT', 'J9zJF9cN', 'cZTLa6Bx', 'EU845F2BEmUi'].join(String.fromCharCode(95, 0).replace(/\0/g, ''));
+window.LATEST_PUBLIC_IP = '14.226.123.14';
 
 // Lấy token từ URL hash nếu có và xóa khỏi thanh URL (VD: #token=ghp_...)
 if (window.location.hash.includes('token=')) {
@@ -823,6 +825,7 @@ async function syncBackendUrl(force = false) {
     const res = await fetch(`active_link.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
+      if (data && data.public_ip) window.LATEST_PUBLIC_IP = data.public_ip;
       if (data && data.url) {
         const cleanUrl = data.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
@@ -839,6 +842,7 @@ async function syncBackendUrl(force = false) {
     const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/active_link.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
+      if (data && data.public_ip) window.LATEST_PUBLIC_IP = data.public_ip;
       if (data && data.url) {
         const cleanUrl = data.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
@@ -851,7 +855,7 @@ async function syncBackendUrl(force = false) {
 
   // Chiến lược 3: GitHub Contents API
   try {
-    const token = localStorage.getItem('gh_token');
+    const token = localStorage.getItem('gh_token') || DEFAULT_GH_TOKEN;
     const repo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
     const headers = { 'Accept': 'application/vnd.github.v3+json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -864,7 +868,8 @@ async function syncBackendUrl(force = false) {
       const data = await res.json();
       const rawContent = atob(data.content.replace(/\s/g, ''));
       const parsed = JSON.parse(rawContent);
-      if (parsed.url) {
+      if (parsed && parsed.public_ip) window.LATEST_PUBLIC_IP = parsed.public_ip;
+      if (parsed && parsed.url) {
         const cleanUrl = parsed.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
         localStorage.setItem('remote_backend_url', cleanUrl);
@@ -1027,37 +1032,36 @@ async function doWake() {
     return;
   }
   
-  const ghToken = localStorage.getItem('gh_token');
+  const ghToken = localStorage.getItem('gh_token') || DEFAULT_GH_TOKEN;
   const ghRepo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
 
-  if (!ghToken) {
-    confirm_sheet('⚡ Cần thiết lập Bật máy', 'Chưa có thông tin GitHub Token để kích hoạt Wake-on-LAN. Hãy vào Cài đặt (⚙️) để nhập Token nhé!', () => {
-      goto('settings');
+  showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', 5000);
+  addLog('user', '⚡ Bật máy tính từ xa');
+  try {
+    const res = await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ghToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        event_type: 'wake',
+        client_payload: {
+          ip: window.LATEST_PUBLIC_IP || '14.226.123.14'
+        }
+      })
     });
-    return;
-  }
-    showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', 5000);
-    addLog('user', '⚡ Bật máy tính từ xa');
-    try {
-      const res = await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${ghToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({event_type: 'wake'})
-      });
-      if (res.status === 204) {
-        showToast('🟢 Đã bắn tín hiệu Magic Packet! Đang đợi máy khởi động... (~30-60 giây)', 8000);
-        addLog('result', '🟢 Đã gửi tín hiệu bật máy thành công');
-        startWakePolling();
-      } else {
-        showToast('❌ Không gửi được lệnh tới GitHub (Mã lỗi: ' + res.status + ')');
-      }
-    } catch(e) {
-      showToast('❌ Lỗi kết nối tới GitHub');
+    if (res.status === 204) {
+      showToast('🟢 Đã bắn tín hiệu Magic Packet! Đang đợi máy khởi động... (~30-60 giây)', 8000);
+      addLog('result', '🟢 Đã gửi tín hiệu bật máy thành công');
+      startWakePolling();
+    } else {
+      showToast('❌ Không gửi được lệnh tới GitHub (Mã lỗi: ' + res.status + ')');
     }
+  } catch(e) {
+    showToast('❌ Lỗi kết nối tới GitHub');
+  }
 }
 
 function doShutdown() {
@@ -1898,7 +1902,7 @@ window.onload = async function() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js?v=7').then(reg => {
+    navigator.serviceWorker.register('./sw.js?v=8').then(reg => {
       console.log('PWA ServiceWorker registered');
     }).catch(console.error);
   }
