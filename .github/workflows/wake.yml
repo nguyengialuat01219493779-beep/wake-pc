@@ -12,11 +12,10 @@ jobs:
       - name: Send Magic Packet to PC
         run: |
           python -c "
-          import socket, sys
+          import socket, time
           mac = 'A8:A1:59:DB:A0:3E'
           data = bytes.fromhex('FF' * 6 + mac.replace(':', '').replace('-', '') * 16)
           
-          # Target IP: uu tien lay tu client_payload, fallback ve secret hoac IP dong hien tai
           target_ip = '${{ github.event.client_payload.ip }}'.strip()
           if not target_ip:
               target_ip = '${{ secrets.ROUTER_DDNS_OR_IP }}'.strip()
@@ -27,11 +26,12 @@ jobs:
           sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
           sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
           
-          # Ban tin hieu qua tat ca cac cong WoL pho bien: 9, 7, 4343
           for port in [9, 7, 4343]:
-              try:
-                  sock.sendto(data, (target_ip, port))
-                  print(f' -> Da ban Magic Packet toi {target_ip}:{port}')
-              except Exception as e:
-                  print(f' -> Loi port {port}: {e}')
+              for attempt in range(5):
+                  try:
+                      sock.sendto(data, (target_ip, port))
+                  except Exception as e:
+                      print(f' -> Loi port {port}: {e}')
+                  time.sleep(0.05)
+              print(f' -> Da ban 5 goi Magic Packet toi {target_ip}:{port}')
           "
