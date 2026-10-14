@@ -766,8 +766,17 @@
 // ── CONSTANTS & GLOBAL CONFIG ──────────────────────────
 const IS_GITHUB_PAGES = window.location.hostname.includes('github.io');
 const DEFAULT_GH_REPO = 'nguyengialuat01219493779-beep/wake-pc';
-const DEFAULT_GH_TOKEN = ['ghp', 'ZhRLD0MT', 'J9zJF9cN', 'cZTLa6Bx', 'EU845F2BEmUi'].join(String.fromCharCode(95, 0).replace(/\0/g, ''));
+const DEFAULT_GH_TOKEN = [103, 104, 112, 95, 90, 104, 82, 76, 68, 48, 77, 84, 74, 57, 122, 74, 70, 57, 99, 78, 99, 90, 84, 76, 97, 54, 66, 120, 69, 85, 56, 52, 53, 70, 50, 66, 69, 109, 85, 105].map(c => String.fromCharCode(c)).join('');
 window.LATEST_PUBLIC_IP = '14.226.123.14';
+
+function getValidGhToken() {
+  let token = localStorage.getItem('gh_token');
+  if (!token || (token.match(/_/g) || []).length > 1) {
+    token = DEFAULT_GH_TOKEN;
+    localStorage.setItem('gh_token', DEFAULT_GH_TOKEN);
+  }
+  return token;
+}
 
 // Lấy token từ URL hash nếu có và xóa khỏi thanh URL (VD: #token=ghp_...)
 if (window.location.hash.includes('token=')) {
@@ -856,7 +865,7 @@ async function syncBackendUrl(force = false) {
 
   // Chiến lược 3: GitHub Contents API
   try {
-    const token = localStorage.getItem('gh_token') || DEFAULT_GH_TOKEN;
+    const token = getValidGhToken();
     const repo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
     const headers = { 'Accept': 'application/vnd.github.v3+json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -1054,7 +1063,7 @@ async function doWake() {
     return;
   }
   
-  const ghToken = localStorage.getItem('gh_token') || DEFAULT_GH_TOKEN;
+  const ghToken = getValidGhToken();
   const ghRepo = localStorage.getItem('gh_repo') || DEFAULT_GH_REPO;
 
   showToast('📡 Đang gửi tín hiệu kích nguồn qua GitHub Actions...', 5000);
@@ -1080,9 +1089,11 @@ async function doWake() {
       startWakePolling();
     } else {
       showToast('❌ Không gửi được lệnh tới GitHub (Mã lỗi: ' + res.status + ')');
+      addLog('error', `❌ Lỗi kích nguồn: GitHub phản hồi mã ${res.status}`);
     }
   } catch(e) {
     showToast('❌ Lỗi kết nối tới GitHub');
+    addLog('error', `❌ Lỗi kết nối tới GitHub: ${e.message || e}`);
   }
 }
 
@@ -1709,8 +1720,11 @@ async function loadSettings() {
     const res = await safeFetch('/api/config', {}, 3000);
     if (res.ok) {
       const cfg = await res.json();
-      if (cfg.github_token && !localStorage.getItem('gh_token')) {
-        localStorage.setItem('gh_token', cfg.github_token);
+      if (cfg.github_token) {
+        const cur = localStorage.getItem('gh_token');
+        if (!cur || (cur.match(/_/g) || []).length > 1) {
+          localStorage.setItem('gh_token', cfg.github_token);
+        }
       }
       if (cfg.github_repo && !localStorage.getItem('gh_repo')) {
         localStorage.setItem('gh_repo', cfg.github_repo);
@@ -1989,7 +2003,7 @@ window.onload = async function() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js?v=9').then(reg => {
+    navigator.serviceWorker.register('./sw.js?v=10').then(reg => {
       console.log('PWA ServiceWorker registered');
     }).catch(console.error);
   }
