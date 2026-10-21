@@ -9,18 +9,32 @@ jobs:
   wake_pc:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Send Magic Packet to PC
         run: |
           python -c "
-          import socket, time
+          import socket, time, json, os
           mac = 'A8:A1:59:DB:A0:3E'
           data = bytes.fromhex('FF' * 6 + mac.replace(':', '').replace('-', '') * 16)
           
           target_ip = '${{ github.event.client_payload.ip }}'.strip()
+          # Tu dong lay IP moi nhat tu active_link.json neu client gui rong hoac chua cap nhat
+          if not target_ip or target_ip == '14.226.123.14':
+              if os.path.exists('active_link.json'):
+                  try:
+                      with open('active_link.json', 'r') as f:
+                          cfg = json.load(f)
+                          target_ip = (cfg.get('public_ip') or '').strip()
+                          print(f'Using fresh public IP from active_link.json: {target_ip}')
+                  except Exception as e:
+                      print('Error reading active_link.json:', e)
+          
           if not target_ip:
               target_ip = '${{ secrets.ROUTER_DDNS_OR_IP }}'.strip()
           if not target_ip:
-              target_ip = '14.226.123.14'
+              target_ip = '14.226.121.194'
               
           print(f'Sending Magic Packet for MAC {mac} to IP: {target_ip}')
           sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
