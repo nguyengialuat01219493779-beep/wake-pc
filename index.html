@@ -767,7 +767,7 @@
 const IS_GITHUB_PAGES = window.location.hostname.includes('github.io');
 const DEFAULT_GH_REPO = 'nguyengialuat01219493779-beep/wake-pc';
 const DEFAULT_GH_TOKEN = [103, 104, 112, 95, 90, 104, 82, 76, 68, 48, 77, 84, 74, 57, 122, 74, 70, 57, 99, 78, 99, 90, 84, 76, 97, 54, 66, 120, 69, 85, 56, 52, 53, 70, 50, 66, 69, 109, 85, 105].map(c => String.fromCharCode(c)).join('');
-window.LATEST_PUBLIC_IP = '14.226.123.14';
+window.LATEST_PUBLIC_IP = localStorage.getItem('latest_public_ip') || '14.226.121.194';
 
 function getValidGhToken() {
   let token = localStorage.getItem('gh_token');
@@ -835,7 +835,10 @@ async function syncBackendUrl(force = false) {
     const res = await fetch(`active_link.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data && data.public_ip) window.LATEST_PUBLIC_IP = data.public_ip;
+      if (data && data.public_ip) {
+        window.LATEST_PUBLIC_IP = data.public_ip;
+        localStorage.setItem('latest_public_ip', data.public_ip);
+      }
       if (data && data.url) {
         const cleanUrl = data.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
@@ -852,7 +855,10 @@ async function syncBackendUrl(force = false) {
     const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/active_link.json?t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (data && data.public_ip) window.LATEST_PUBLIC_IP = data.public_ip;
+      if (data && data.public_ip) {
+        window.LATEST_PUBLIC_IP = data.public_ip;
+        localStorage.setItem('latest_public_ip', data.public_ip);
+      }
       if (data && data.url) {
         const cleanUrl = data.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
@@ -878,7 +884,10 @@ async function syncBackendUrl(force = false) {
       const data = await res.json();
       const rawContent = atob(data.content.replace(/\s/g, ''));
       const parsed = JSON.parse(rawContent);
-      if (parsed && parsed.public_ip) window.LATEST_PUBLIC_IP = parsed.public_ip;
+      if (parsed && parsed.public_ip) {
+        window.LATEST_PUBLIC_IP = parsed.public_ip;
+        localStorage.setItem('latest_public_ip', parsed.public_ip);
+      }
       if (parsed && parsed.url) {
         const cleanUrl = parsed.url.replace(/\/+$/, '');
         BACKEND_URL = cleanUrl;
@@ -944,15 +953,19 @@ function updateCmdOnline() {
 }
 
 let lastKnownOnline = null;
+let consecutiveStatusFails = 0;
+let isCheckingStatus = false;
 
 async function checkStatus(forceSync = false) {
+  if (isCheckingStatus && !forceSync) return false;
+  isCheckingStatus = true;
   if (forceSync) {
     addLog('system','🔍 Đang kiểm tra kết nối tới PC…');
   }
   try {
-    // 1. Luôn đồng bộ link nếu chưa có hoặc nếu người dùng bấm nút Kiểm tra kết nối
-    if (IS_GITHUB_PAGES && (!BACKEND_URL || forceSync)) {
-      await syncBackendUrl(forceSync);
+    // 1. Luôn đồng bộ link nếu chưa có, hoặc nếu người dùng bấm nút, hoặc nếu đã rớt mạng 2 lần
+    if (IS_GITHUB_PAGES && (!BACKEND_URL || forceSync || consecutiveStatusFails >= 2)) {
+      await syncBackendUrl(forceSync || consecutiveStatusFails >= 2);
     }
     
     let res = null;
@@ -962,6 +975,7 @@ async function checkStatus(forceSync = false) {
 
     // 2. Nếu không kết nối được hoặc link cũ bị chết (HTTP 502/530), lập tức ép quét link mới nhất và thử lại ngay
     if (!res || !res.ok) {
+      consecutiveStatusFails++;
       if (IS_GITHUB_PAGES) {
         const oldUrl = BACKEND_URL;
         await syncBackendUrl(true);
@@ -974,6 +988,7 @@ async function checkStatus(forceSync = false) {
     }
 
     if (res && res.ok) {
+      consecutiveStatusFails = 0;
       const data = await res.json();
       setPC(true);
       document.getElementById('hUptime').textContent = data.uptime || '—';
@@ -1008,6 +1023,7 @@ async function checkStatus(forceSync = false) {
       return false;
     }
   } catch(e) {
+    consecutiveStatusFails++;
     setPC(false);
     document.getElementById('hPing').textContent = '—';
     document.getElementById('hSSH').textContent = '—';
@@ -1022,7 +1038,29 @@ async function checkStatus(forceSync = false) {
     }
     lastKnownOnline = false;
     return false;
+  } finally {
+    isCheckingStatus = false;
   }
+}
+
+// ── TỰ ĐỘNG PHỤC HỒI KẾT NỐI KHI ĐIỆN THOẠI MỞ LẠI TAB (ANTI-IDLE) ──
+let lastResumeTime = 0;
+async function handleAppResume() {
+  const now = Date.now();
+  if (now - lastResumeTime < 2500) return;
+  lastResumeTime = now;
+  if (IS_GITHUB_PAGES) {
+    await syncBackendUrl(true);
+  }
+  await checkStatus(true);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    handleAppResume();
+  }
+});
+window.addEventListener('pageshow', handleAppResume);
+window.addEventListener('focus', handleAppResume);
 }
 
 // ── REAL POWER ACTIONS ──────────────────────────────────
@@ -1170,6 +1208,10 @@ async function uploadSelectedFiles(input) {
   const history = document.getElementById('sendHistory');
   if (history.querySelector('.text-center')) history.innerHTML = '';
   
+  if (IS_GITHUB_PAGES && !BACKEND_URL) {
+    await syncBackendUrl(true);
+  }
+
   for (let file of input.files) {
     const formData = new FormData();
     formData.append('file', file);
@@ -1195,16 +1237,20 @@ async function uploadSelectedFiles(input) {
         const data = await res.json();
         item.querySelector('span:last-child').innerHTML = '✅';
         item.querySelector('p:last-child').textContent = `${data.size} MB • Đã lưu vào D:\\Remote PC`;
-        addLog('user', `Đã chuyển file: ${file.name} vào Desktop PC`);
+        addLog('user', `Đã chuyển file: ${file.name} vào PC`);
+        showToast(`✅ Đã gửi thành công: <b>${file.name}</b>`, 4000);
       } else {
         item.querySelector('span:last-child').innerHTML = '❌';
-        item.querySelector('p:last-child').textContent = 'Lỗi truyền file';
+        item.querySelector('p:last-child').textContent = `Lỗi truyền file (Mã ${res.status})`;
+        if (IS_GITHUB_PAGES) syncBackendUrl(true);
       }
     } catch(e) {
       item.querySelector('span:last-child').innerHTML = '❌';
-      item.querySelector('p:last-child').textContent = 'Lỗi kết nối';
+      item.querySelector('p:last-child').textContent = 'Lỗi kết nối tới PC';
+      if (IS_GITHUB_PAGES) syncBackendUrl(true);
     }
   }
+  input.value = '';
 }
 
 // ── REAL FILE EXPLORER (PC TO PHONE) ───────────────────
@@ -1788,12 +1834,12 @@ async function sendCommand(text) {
   
   try {
     const geminiKey = localStorage.getItem('gemini_api_key') || '';
-    const res = await fetch(api('/api/command'), {
+    const res = await safeFetch('/api/command', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({command: cmd, gemini_key: geminiKey})
-    });
-    if (res.ok) {
+    }, 20000);
+    if (res && res.ok) {
       const data = await res.json();
       const agentLabel = data.agent ? `🤖 ${data.agent}` : '🤖 PC';
       showToast(`${agentLabel}: ${data.reply}`, 5000);
@@ -1825,10 +1871,12 @@ async function sendCommand(text) {
     } else {
       showToast('❌ Máy tính không phản hồi lệnh');
       addLog('error', '❌ Máy tính không phản hồi lệnh');
+      if (IS_GITHUB_PAGES) syncBackendUrl(true);
     }
   } catch(e) {
-    showToast('❌ Mất kết nối tới server');
+    showToast('❌ Mất kết nối tới server PC (Đang thử đồng bộ lại...)');
     addLog('error', '❌ Mất kết nối tới server PC');
+    if (IS_GITHUB_PAGES) syncBackendUrl(true);
   }
 }
 
